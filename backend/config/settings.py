@@ -53,6 +53,8 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
+    # 生产环境由 WhiteNoise 提供 Django 后台静态文件
+    "whitenoise.middleware.WhiteNoiseMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "corsheaders.middleware.CorsMiddleware",
     "django.middleware.common.CommonMiddleware",
@@ -129,6 +131,28 @@ CELERY_RESULT_SERIALIZER = "json"
 CELERY_TASK_TIME_LIMIT = 60
 CELERY_TASK_ACKS_LATE = True
 CELERY_WORKER_PREFETCH_MULTIPLIER = 1
+
+# ---- Cache ----
+# 配置 CACHE_URL（如 redis://127.0.0.1:6379/1）时使用 Redis 缓存；
+# 未配置时回退本地内存缓存（开发环境/单进程），保证不装 Redis 也能跑起来。
+CACHE_URL = os.getenv("CACHE_URL", "")
+if CACHE_URL:
+    CACHES = {
+        "default": {
+            "BACKEND": "django.core.cache.backends.redis.RedisCache",
+            "LOCATION": CACHE_URL,
+            "KEY_PREFIX": "oj",
+            "TIMEOUT": 300,
+        }
+    }
+else:
+    CACHES = {
+        "default": {
+            "BACKEND": "django.core.cache.backends.locmem.LocMemCache",
+            "LOCATION": "oj-locmem",
+            "TIMEOUT": 300,
+        }
+    }
 
 # ---- CORS ----
 CORS_ALLOWED_ORIGINS = [

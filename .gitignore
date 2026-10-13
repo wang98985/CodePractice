@@ -11,6 +11,9 @@ backend/config/sandbox/
 backend/db.sqlite3
 backend/staticfiles/
 
+# 生产部署环境变量（含密钥，不入库）
+deploy/.env.prod
+
 # Node
 node_modules/
 frontend/dist/

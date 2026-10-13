@@ -1,0 +1,110 @@
+# 生产环境编排：MySQL + Redis + Django(Gunicorn) + Celery 判题 worker + Nginx
+# 用法：cd deploy && docker compose -f docker-compose.prod.yml --env-file .env.prod up -d --build
+name: codepractice
+
+x-backend-build: &backend-build
+  context: ..
+  dockerfile: deploy/backend.Dockerfile
+
+x-backend-env: &backend-env
+  DB_HOST: mysql
+  DB_PORT: "3306"
+  CELERY_BROKER_URL: redis://redis:6379/0
+  # 题目列表缓存用的 Redis 库（与 Celery broker 的 DB0 隔离）
+  CACHE_URL: redis://redis:6379/1
+  SANDBOX_DIR: /tmp/oj_sandbox
+  DEBUG: "False"
+
+services:
+  mysql:
+    image: mysql:8.0
+    container_name: oj-mysql
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      MYSQL_DATABASE: ${DB_NAME}
+      MYSQL_USER: ${DB_USER}
+      MYSQL_PASSWORD: ${DB_PASSWORD}
+      TZ: Asia/Shanghai
+    command:
+      - --character-set-server=utf8mb4
+      - --collation-server=utf8mb4_unicode_ci
+      - --innodb-buffer-pool-size=128M
+      - --max-connections=100
+    volumes:
+      - mysql_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h127.0.0.1 -uroot -p$$MYSQL_ROOT_PASSWORD --silent"]
+      interval: 10s
+      timeout: 5s
+      retries: 20
+      start_period: 60s
+    networks: [oj]
+
+  redis:
+    image: redis:7-alpine
+    container_name: oj-redis
+    restart: unless-stopped
+    command: ["redis-server", "--appendonly", "yes"]
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 10
+    networks: [oj]
+
+  backend:
+    image: oj-backend:latest
+    build: *backend-build
+    container_name: oj-backend
+    restart: unless-stopped
+    env_file: [.env.prod]
+    environment: *backend-env
+    tmpfs:
+      - /tmp:size=256m
+    expose: ["8000"]
+    depends_on:
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks: [oj]
+
+  worker:
+    # 复用 backend 构建出的镜像；不能重复声明 build，否则 compose 并发构建同一 tag 会冲突
+    image: oj-backend:latest
+    container_name: oj-worker
+    restart: unless-stopped
+    # Linux 下用 prefork 池；并发 2，允许两个判题任务并行（与 2 vCPU 匹配）
+    command: ["celery", "-A", "config", "worker", "-l", "info", "--concurrency", "2"]
+    env_file: [.env.prod]
+    environment: *backend-env
+    tmpfs:
+      - /tmp:size=256m
+    depends_on:
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks: [oj]
+
+  web:
+    image: oj-web:latest
+    build:
+      context: ..
+      dockerfile: deploy/frontend.Dockerfile
+    container_name: oj-web
+    restart: unless-stopped
+    ports:
+      - "80:80"
+    depends_on: [backend]
+    networks: [oj]
+
+volumes:
+  mysql_data:
+  redis_data:
+
+networks:
+  oj:

@@ -1,0 +1,18 @@
+# 构建上下文排除项（构建上下文为仓库根目录）
+.git
+.gitignore
+.vscode
+**/venv
+**/.venv
+**/node_modules
+**/__pycache__
+**/*.pyc
+frontend/dist
+backend/config/sandbox
+backend/staticfiles
+backend/.env
+deploy/.env.prod
+tools
+*.md
+gen_problems.py
+problems_1000.csv

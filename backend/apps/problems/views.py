@@ -1,5 +1,6 @@
 import json
 
+from django.core.cache import cache
 from django.db.models import Count
 from django.shortcuts import get_object_or_404
 from rest_framework import mixins, permissions, viewsets
@@ -11,6 +12,11 @@ from rest_framework.views import APIView
 from apps.accounts.permissions import IsAdminRole, IsSuperAdminRole
 
 from .bulk_import import decode_uploaded, import_problems
+from .cache_utils import (
+    PROBLEM_LIST_CACHE_TTL,
+    invalidate_problem_list_cache,
+    problem_list_cache_key,
+)
 from .filters import ProblemFilterSet
 from .models import Problem, Tag, TestCase
 from .pagination import ManagePagination
@@ -57,12 +63,28 @@ class ProblemViewSet(viewsets.ModelViewSet):
             return ProblemManageSerializer
         return ProblemDetailSerializer
 
+    def list(self, request, *args, **kwargs):
+        """公开题目列表：命中缓存直接返回，避免重复查库。"""
+        key = problem_list_cache_key(request.META.get("QUERY_STRING", ""))
+        cached = cache.get(key)
+        if cached is not None:
+            return Response(cached)
+        response = super().list(request, *args, **kwargs)
+        cache.set(key, response.data, PROBLEM_LIST_CACHE_TTL)
+        return response
+
     def perform_create(self, serializer):
         serializer.save(created_by=self.request.user)
+        invalidate_problem_list_cache()
+
+    def perform_update(self, serializer):
+        serializer.save()
+        invalidate_problem_list_cache()
 
     def destroy(self, request, *args, **kwargs):
         problem = self.get_object()
         problem.delete()
+        invalidate_problem_list_cache()
         return Response(status=204)
 
 
@@ -111,6 +133,8 @@ class ProblemBulkImportView(APIView):
                 )
             text = str(content)
         created, failed = import_problems(text, request.user)
+        if created:
+            invalidate_problem_list_cache()
         return Response(
             {
                 "created": created,

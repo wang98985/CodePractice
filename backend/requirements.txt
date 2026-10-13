@@ -11,3 +11,5 @@ httpx~=0.27
 psutil~=5.9
 django-filter~=24.1
 markdown~=3.5
+gunicorn~=23.0
+whitenoise~=6.7
