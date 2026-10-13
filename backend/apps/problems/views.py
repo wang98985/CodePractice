@@ -13,6 +13,7 @@ from apps.accounts.permissions import IsAdminRole, IsSuperAdminRole
 from .bulk_import import decode_uploaded, import_problems
 from .filters import ProblemFilterSet
 from .models import Problem, Tag, TestCase
+from .pagination import ManagePagination
 from .serializers import (
     ProblemDetailSerializer,
     ProblemListSerializer,
@@ -72,7 +73,7 @@ class ProblemManageViewSet(mixins.ListModelMixin, viewsets.GenericViewSet):
     serializer_class = ProblemManageListSerializer
     filterset_class = ProblemFilterSet
     search_fields = ["title"]
-    pagination_class = None
+    pagination_class = ManagePagination
 
     def get_queryset(self):
         return (

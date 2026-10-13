@@ -37,6 +37,17 @@
         </template>
       </el-table-column>
     </el-table>
+
+    <el-pagination
+      v-model:current-page="page"
+      v-model:page-size="pageSize"
+      :total="total"
+      :page-sizes="[20, 50, 100, 200]"
+      layout="total, sizes, prev, pager, next, jumper"
+      class="pager"
+      @size-change="onPageSizeChange"
+      @current-change="load"
+    />
   </el-card>
 
   <!-- 批量导入对话框（仅超管） -->
@@ -224,6 +235,9 @@ import { difficultyColor, difficultyText } from '@/utils/verdict'
 const auth = useAuthStore()
 
 const rows = ref([])
+const total = ref(0)
+const page = ref(1)
+const pageSize = ref(20)
 const allTags = ref([])
 const loading = ref(false)
 const saving = ref(false)
@@ -253,13 +267,19 @@ const caseForm = reactive({ id: null, order: 0, input_data: '', expected_output:
 async function load() {
   loading.value = true
   try {
-    const { data } = await listAdminProblems()
+    const { data } = await listAdminProblems({ page: page.value, page_size: pageSize.value })
     rows.value = data.results || data
+    total.value = data.count ?? rows.value.length
   } catch (e) {
     ElMessage.error(e.message || '加载失败')
   } finally {
     loading.value = false
   }
+}
+
+function onPageSizeChange() {
+  page.value = 1
+  load()
 }
 
 function openCreate() {
@@ -303,6 +323,7 @@ async function save() {
     } else {
       await createProblem({ ...form })
       ElMessage.success('题目已创建')
+      page.value = 1
     }
     dialogVisible.value = false
     load()
@@ -318,6 +339,8 @@ async function remove(row) {
     await ElMessageBox.confirm(`确定删除题目「${row.title}」？其测试用例与提交记录将一并删除`, '确认', { type: 'warning' })
     await deleteProblem(row.id)
     ElMessage.success('已删除')
+    // 删除的是本页最后一条时回退一页，避免停留在空白页
+    if (rows.value.length === 1 && page.value > 1) page.value -= 1
     load()
   } catch { /* 取消 */ }
 }
@@ -440,6 +463,7 @@ async function doImport() {
     const { data } = await bulkImportProblems(payload)
     importResult.value = data
     ElMessage.success(`导入完成：成功 ${data.created_count} 题，失败 ${data.failed_count} 行`)
+    page.value = 1
     load()
   } catch (e) {
     ElMessage.error(e.response?.data?.detail || e.message || '导入失败')
@@ -462,6 +486,10 @@ onMounted(async () => {
   display: flex;
   gap: 12px;
   margin-bottom: 16px;
+}
+.pager {
+  margin-top: 16px;
+  justify-content: flex-end;
 }
 .unit {
   margin: 0 12px 0 6px;
