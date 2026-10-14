@@ -259,6 +259,105 @@
   grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
 }
 
+/* 手机端卡片列表（题库 / 我的提交 / 个人主页最近提交复用） */
+.list-cards {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.list-card {
+  display: block;
+  padding: 12px 14px;
+  border: 1px solid var(--c-border-light);
+  border-radius: var(--radius-md);
+  background: var(--c-surface);
+  color: inherit;
+  text-decoration: none;
+}
+.list-card.is-link {
+  cursor: pointer;
+  transition: border-color var(--motion-fast) ease, box-shadow var(--motion-fast) ease;
+}
+.list-card.is-link:active {
+  border-color: var(--brand-500);
+  box-shadow: var(--shadow-1);
+}
+.list-card__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+.list-card__title {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--c-text);
+}
+.list-card__meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  margin-top: 8px;
+}
+.list-card__aux {
+  color: var(--c-text-secondary);
+  font-size: 12px;
+}
+
 .text-muted {
   color: var(--c-text-secondary);
+}
+
+/* ================= 响应式层 =================
+   两级断点：
+     max-width: 768px —— 与 Element Plus 的 xs 断点一致，
+       保证 el-row :xs 已堆叠时 CSS 同步切换；
+     max-width: 560px —— 处理窄屏手机（320~375）的细节。
+   说明：.main / .header-inner / .main-inner 在 MainLayout.vue 中是
+   scoped（特异性更高），其响应式规则必须写在该文件内，不在此处。
+   ============================================ */
+@media (max-width: 768px) {
+  .el-card__body {
+    padding: 16px;
+  }
+  .el-card__header {
+    padding: 14px 16px;
+  }
+  .page-header {
+    flex-wrap: wrap;
+  }
+  .page-header .page-title {
+    font-size: 22px;
+  }
+  .page-header .page-actions {
+    width: 100%;
+  }
+  /* 未内联设置 max-width，普通规则即可生效 —— 一处修复全部对话框 */
+  .el-dialog {
+    max-width: calc(100vw - 24px);
+  }
+  .el-table .el-table__cell {
+    padding: 8px 0;
+  }
+}
+
+@media (max-width: 560px) {
+  .card-grid {
+    grid-template-columns: 1fr;
+  }
+  /* 工具栏控件宽度写在模板内联 style 上，只有 !important 能覆盖；
+     用 .toolbar 前缀锁死作用域，避免波及页面内其他 el-input */
+  .toolbar .el-input,
+  .toolbar .el-select,
+  .toolbar .el-input-number {
+    width: 100% !important;
+    flex: 1 1 100%;
+  }
+  .toolbar .toolbar-spacer {
+    display: none;
+  }
+  .el-pagination .el-pagination__total {
+    display: none;
+  }
 }

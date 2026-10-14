@@ -58,7 +58,8 @@ async function submit() {
 
 <style scoped>
 .auth-page {
-  height: 100vh;
+  min-height: 100vh;
+  padding: 16px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -66,7 +67,7 @@ async function submit() {
   background: radial-gradient(1200px 600px at 50% -10%, #e8f2fd 0%, transparent 60%), #f5f5f7;
 }
 .auth-card {
-  width: 380px;
+  width: min(380px, calc(100vw - 32px));
   padding: 12px 16px;
   border: none;
   border-radius: var(--radius-lg);

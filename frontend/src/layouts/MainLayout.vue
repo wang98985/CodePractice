@@ -2,6 +2,10 @@
   <el-container class="main-layout">
     <el-header class="header">
       <div class="header-inner">
+        <el-button class="nav-toggle" text aria-label="打开导航" @click="drawerOpen = true">
+          <el-icon :size="22"><Menu /></el-icon>
+        </el-button>
+
         <div class="logo" @click="$router.push('/problems')">
           <span class="logo-mark">CP</span>
           <span class="logo-text">CodePractice</span>
@@ -11,7 +15,7 @@
           mode="horizontal"
           router
           :default-active="activeMenu"
-          class="menu"
+          class="menu desk-menu"
           :ellipsis="false"
         >
           <el-menu-item index="/problems">题库</el-menu-item>
@@ -30,7 +34,7 @@
           <span class="user-info">
             <UserAvatar :name="displayName" :size="30" />
             <span class="user-name">{{ displayName }}</span>
-            <el-tag size="small" :type="roleTagType" effect="plain">{{ roleText }}</el-tag>
+            <el-tag class="user-role-tag" size="small" :type="roleTagType" effect="plain">{{ roleText }}</el-tag>
           </span>
           <template #dropdown>
             <el-dropdown-menu>
@@ -52,11 +56,38 @@
 
     <AssistantChat />
   </el-container>
+
+  <!-- 窄屏导航抽屉：复用同一组菜单项 -->
+  <el-drawer
+    v-model="drawerOpen"
+    direction="ltr"
+    size="250px"
+    :with-header="false"
+    class="nav-drawer"
+  >
+    <el-menu mode="vertical" router :default-active="activeMenu" class="drawer-menu">
+      <el-menu-item index="/problems">题库</el-menu-item>
+      <el-menu-item index="/submissions">我的提交</el-menu-item>
+      <template v-if="auth.isAdmin">
+        <el-menu-item index="/admin/problems">题目管理</el-menu-item>
+        <el-menu-item index="/admin/users">用户管理</el-menu-item>
+      </template>
+      <template v-if="auth.isSuperAdmin">
+        <el-menu-item index="/admin/admins">管理员管理</el-menu-item>
+        <el-menu-item index="/admin/dashboard">仪表盘</el-menu-item>
+      </template>
+      <el-menu-item v-if="auth.isLoggedIn" index="/profile">个人主页</el-menu-item>
+    </el-menu>
+    <div v-if="auth.isLoggedIn" class="drawer-footer">
+      <el-button class="drawer-logout" @click="handleCommand('logout')">退出登录</el-button>
+    </div>
+  </el-drawer>
 </template>
 
 <script setup>
-import { computed, watch } from 'vue'
+import { computed, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
+import { Menu } from '@element-plus/icons-vue'
 import { useAuthStore } from '@/stores/auth'
 import { useAssistantStore } from '@/stores/assistant'
 import AssistantChat from '@/components/AssistantChat.vue'
@@ -67,6 +98,7 @@ const assistantStore = useAssistantStore()
 const route = useRoute()
 const router = useRouter()
 
+const drawerOpen = ref(false)
 const activeMenu = computed(() => '/' + route.path.split('/')[1])
 const displayName = computed(() => auth.user?.nickname || auth.user?.email || '')
 const roleText = computed(
@@ -80,6 +112,7 @@ const roleTagType = computed(
 watch(
   () => route.path,
   (path) => {
+    drawerOpen.value = false
     if (!path.startsWith('/problems/')) assistantStore.clearProblem()
   }
 )
@@ -170,5 +203,47 @@ function handleCommand(cmd) {
 .main-inner {
   max-width: 1280px;
   margin: 0 auto;
+}
+
+/* ---------------- 窄屏导航 ---------------- */
+.nav-toggle {
+  display: none;
+  margin-right: 4px;
+}
+.drawer-menu {
+  border-right: none;
+}
+.drawer-footer {
+  padding: 12px 16px;
+  border-top: 1px solid var(--c-border-light);
+}
+.drawer-logout {
+  width: 100%;
+}
+
+@media (max-width: 768px) {
+  .nav-toggle {
+    display: inline-flex;
+  }
+  /* 横向菜单无法收缩（:ellipsis="false"），窄屏整体隐藏，改用抽屉 */
+  .desk-menu {
+    display: none;
+  }
+  .header-inner {
+    padding: 0 12px;
+  }
+  .logo {
+    margin-right: 12px;
+  }
+  .logo-text {
+    display: none;
+  }
+  .user-name,
+  .user-role-tag {
+    display: none;
+  }
+  .main {
+    padding: 16px 12px;
+  }
 }
 </style>

@@ -15,7 +15,7 @@
       </div>
     </template>
 
-    <el-descriptions :column="4" border size="small" class="stats">
+    <el-descriptions :column="isMobile ? 2 : 4" border size="small" class="stats">
       <el-descriptions-item label="用例通过">
         {{ submission.passed_cases }}/{{ submission.total_cases }}
       </el-descriptions-item>
@@ -52,8 +52,10 @@ import { getSubmission } from '@/api/submissions'
 import { NON_TERMINAL } from '@/utils/verdict'
 import CodeEditor from '@/components/CodeEditor.vue'
 import VerdictBadge from '@/components/VerdictBadge.vue'
+import { useIsMobile } from '@/composables/useResponsive'
 
 const route = useRoute()
+const isMobile = useIsMobile()
 const submission = ref({})
 const loading = ref(true)
 let timer = null
@@ -83,6 +85,12 @@ onBeforeUnmount(() => clearTimeout(timer))
   display: flex;
   justify-content: space-between;
   align-items: center;
+}
+@media (max-width: 560px) {
+  .header {
+    flex-wrap: wrap;
+    gap: 8px;
+  }
 }
 .header-left {
   display: flex;

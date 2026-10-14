@@ -137,11 +137,11 @@ async function submit() {
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 32px 0;
+  padding: 32px 16px;
   background: radial-gradient(1200px 600px at 50% -10%, #e8f2fd 0%, transparent 60%), #f5f5f7;
 }
 .auth-card {
-  width: 420px;
+  width: min(420px, calc(100vw - 32px));
   padding: 12px 16px;
   border: none;
   border-radius: var(--radius-lg);

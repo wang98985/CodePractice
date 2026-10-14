@@ -26,7 +26,7 @@
     </div>
 
     <el-card shadow="never">
-      <el-table v-loading="loading" :data="problems" stripe>
+      <el-table v-if="!isMobile" v-loading="loading" :data="problems" stripe>
         <el-table-column prop="id" label="#" width="64" />
         <el-table-column label="标题" min-width="260">
           <template #default="{ row }">
@@ -76,6 +76,39 @@
         </el-table-column>
       </el-table>
 
+      <!-- 手机端：卡片列表替代表格 -->
+      <div v-else v-loading="loading" class="list-cards">
+        <router-link
+          v-for="row in problems"
+          :key="row.id"
+          :to="`/problems/${row.id}`"
+          class="list-card is-link"
+        >
+          <div class="list-card__head">
+            <span class="list-card__title">{{ row.title }}</span>
+            <el-tag v-if="solvedIds.has(row.id)" size="small" type="success" effect="plain">
+              已通过
+            </el-tag>
+          </div>
+          <div class="list-card__meta">
+            <el-tag
+              size="small"
+              effect="plain"
+              :style="{ color: difficultyColor(row.difficulty), borderColor: difficultyColor(row.difficulty) }"
+            >
+              {{ difficultyText(row.difficulty) }}
+            </el-tag>
+            <el-tag v-for="t in row.tags" :key="t.id" size="small" type="info" effect="plain">
+              {{ t.name }}
+            </el-tag>
+            <span class="list-card__aux">
+              {{ row.time_limit_ms }}ms / {{ Math.round(row.memory_limit_kb / 1024) }}MB
+            </span>
+          </div>
+        </router-link>
+        <p v-if="!loading && !problems.length" class="text-muted">暂无题目</p>
+      </div>
+
       <el-pagination
         layout="prev, pager, next, total"
         :total="total"
@@ -95,9 +128,11 @@ import { listProblems, listTags } from '@/api/problems'
 import { fetchProfile } from '@/api/profile'
 import { useAuthStore } from '@/stores/auth'
 import { difficultyColor, difficultyText } from '@/utils/verdict'
+import { useIsMobile } from '@/composables/useResponsive'
 import PageHeader from '@/components/PageHeader.vue'
 
 const auth = useAuthStore()
+const isMobile = useIsMobile()
 const problems = ref([])
 const tags = ref([])
 const solvedIds = ref(new Set())

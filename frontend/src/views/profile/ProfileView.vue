@@ -94,7 +94,7 @@
     <!-- 最近提交 -->
     <el-card header="最近提交" shadow="never" class="recent-card">
       <el-table
-        v-if="recent.length"
+        v-if="!isMobile && recent.length"
         :data="recent"
         stripe
         @row-click="(row) => $router.push(`/submissions/${row.id}`)"
@@ -132,6 +132,36 @@
           <template #default="{ row }">{{ formatTime(row.created_at) }}</template>
         </el-table-column>
       </el-table>
+
+      <!-- 手机端：卡片列表替代表格 -->
+      <div v-else-if="isMobile && recent.length" class="list-cards">
+        <router-link
+          v-for="row in recent"
+          :key="row.id"
+          :to="`/submissions/${row.id}`"
+          class="list-card is-link"
+        >
+          <div class="list-card__head">
+            <span class="list-card__title">{{ row.problem.title }}</span>
+            <VerdictBadge :status="row.status" />
+          </div>
+          <div class="list-card__meta">
+            <el-tag
+              size="small"
+              effect="plain"
+              :style="{ color: difficultyColor(row.problem.difficulty), borderColor: difficultyColor(row.problem.difficulty) }"
+            >
+              {{ difficultyText(row.problem.difficulty) }}
+            </el-tag>
+            <span class="list-card__aux">{{ row.language }}</span>
+            <span v-if="row.time_used_ms" class="list-card__aux">{{ row.time_used_ms }}ms</span>
+            <span v-if="row.memory_used_kb" class="list-card__aux">
+              {{ Math.round(row.memory_used_kb / 1024) }}MB
+            </span>
+            <span class="list-card__aux">{{ formatTime(row.created_at) }}</span>
+          </div>
+        </router-link>
+      </div>
       <EmptyState v-else :description="isSelf ? '你还没有提交过题目' : '该用户还没有提交记录'" />
     </el-card>
 
@@ -174,9 +204,11 @@ import StatCard from '@/components/StatCard.vue'
 import UserAvatar from '@/components/UserAvatar.vue'
 import EmptyState from '@/components/EmptyState.vue'
 import VerdictBadge from '@/components/VerdictBadge.vue'
+import { useIsMobile } from '@/composables/useResponsive'
 
 const auth = useAuthStore()
 const route = useRoute()
+const isMobile = useIsMobile()
 
 const info = ref({})
 const stats = ref({})

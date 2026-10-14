@@ -20,7 +20,7 @@
     </div>
 
     <el-card shadow="never">
-      <el-table v-loading="loading" :data="rows" stripe>
+      <el-table v-if="!isMobile" v-loading="loading" :data="rows" stripe>
         <el-table-column prop="id" label="#" width="72" />
         <el-table-column prop="problem_title" label="题目" min-width="200">
           <template #default="{ row }">
@@ -54,6 +54,28 @@
         </el-table-column>
       </el-table>
 
+      <!-- 手机端：卡片列表替代表格 -->
+      <div v-else v-loading="loading" class="list-cards">
+        <router-link
+          v-for="row in rows"
+          :key="row.id"
+          :to="`/submissions/${row.id}`"
+          class="list-card is-link"
+        >
+          <div class="list-card__head">
+            <span class="list-card__title">{{ row.problem_title }}</span>
+            <VerdictBadge :status="row.status" />
+          </div>
+          <div class="list-card__meta">
+            <span class="list-card__aux">用例 {{ row.passed_cases }}/{{ row.total_cases }}</span>
+            <span v-if="row.time_used_ms != null" class="list-card__aux">{{ row.time_used_ms }}ms</span>
+            <span class="list-card__aux">{{ row.language }}</span>
+            <span class="list-card__aux">{{ formatTime(row.created_at) }}</span>
+          </div>
+        </router-link>
+        <p v-if="!loading && !rows.length" class="text-muted">暂无提交记录</p>
+      </div>
+
       <el-pagination
         layout="prev, pager, next, total"
         :total="total"
@@ -71,12 +93,14 @@ import { ElMessage } from 'element-plus'
 import { listSubmissions } from '@/api/submissions'
 import { NON_TERMINAL, VERDICT_MAP } from '@/utils/verdict'
 import VerdictBadge from '@/components/VerdictBadge.vue'
+import { useIsMobile } from '@/composables/useResponsive'
 import PageHeader from '@/components/PageHeader.vue'
 
 const statusOptions = computed(() =>
   Object.fromEntries(Object.entries(VERDICT_MAP).filter(([k]) => !NON_TERMINAL.has(k)))
 )
 
+const isMobile = useIsMobile()
 const rows = ref([])
 const total = ref(0)
 const page = ref(1)

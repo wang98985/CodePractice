@@ -81,4 +81,12 @@ defineExpose({
 .code-editor :deep(.cm-scroller) {
   overflow-y: auto;
 }
+/* 手机端：压低编辑器高度，避免一屏放不下提交按钮 */
+@media (max-width: 560px) {
+  .code-editor :deep(.cm-editor) {
+    min-height: 240px;
+    max-height: 46vh;
+    font-size: 13px;
+  }
+}
 </style>

@@ -243,4 +243,26 @@ async function send() {
   padding-top: 8px;
   border-top: 1px solid var(--c-border-light);
 }
+
+/* 窄屏：面板贴合视口（fab 右缘距视口 12px，面板 right:0 → 左右各留 12px） */
+@media (max-width: 560px) {
+  .assistant-fab {
+    right: 12px;
+    bottom: calc(12px + env(safe-area-inset-bottom, 0px));
+  }
+  .fab-button {
+    width: 48px;
+    height: 48px;
+  }
+  .assistant-panel {
+    width: min(400px, calc(100vw - 24px));
+    height: min(560px, calc(100vh - 140px));
+    height: min(560px, calc(100dvh - 140px));
+    bottom: 60px;
+  }
+  .panel-header {
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+}
 </style>
