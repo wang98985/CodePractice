@@ -46,11 +46,7 @@
 
     <el-main class="main">
       <div class="main-inner">
-        <router-view v-slot="{ Component }">
-          <transition name="fade-slide" mode="out-in">
-            <component :is="Component" />
-          </transition>
-        </router-view>
+        <router-view />
       </div>
     </el-main>
 

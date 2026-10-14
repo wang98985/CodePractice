@@ -33,7 +33,7 @@
         <el-tag size="small" type="primary" effect="plain">
           关联题目：{{ store.problemContext.title }}
         </el-tag>
-        <el-link type="info" :underline="false" @click="store.clearProblem()">移除</el-link>
+        <el-link type="info" underline="never" @click="store.clearProblem()">移除</el-link>
       </div>
 
       <div ref="messageList" class="message-list">

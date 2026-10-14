@@ -30,7 +30,7 @@
         <el-table-column prop="id" label="#" width="64" />
         <el-table-column label="标题" min-width="260">
           <template #default="{ row }">
-            <el-link type="primary" :underline="false" @click="$router.push(`/problems/${row.id}`)">
+            <el-link type="primary" underline="never" @click="$router.push(`/problems/${row.id}`)">
               {{ row.title }}
             </el-link>
             <el-tag

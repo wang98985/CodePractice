@@ -221,16 +221,4 @@
   color: var(--c-text-secondary);
 }
 
-/* ---------------- 路由过渡 ---------------- */
-.fade-slide-enter-active,
-.fade-slide-leave-active {
-  transition: opacity 0.22s ease, transform 0.22s ease;
-}
-.fade-slide-enter-from {
-  opacity: 0;
-  transform: translateY(8px);
-}
-.fade-slide-leave-to {
-  opacity: 0;
-  transform: translateY(-8px);
-}
+

@@ -57,4 +57,11 @@ router.beforeEach((to) => {
   }
 })
 
+// 懒加载 chunk 加载失败时（旧缓存壳引用已删除的 chunk、网络抖动）自动整页刷新，避免静默白屏
+router.onError((error) => {
+  if (/Loading chunk|Failed to fetch dynamically imported module|ChunkLoadError/i.test(error.message)) {
+    window.location.reload()
+  }
+})
+
 export default router

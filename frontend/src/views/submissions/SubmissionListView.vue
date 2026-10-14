@@ -24,7 +24,7 @@
         <el-table-column prop="id" label="#" width="72" />
         <el-table-column prop="problem_title" label="题目" min-width="200">
           <template #default="{ row }">
-            <el-link type="primary" :underline="false" @click="$router.push(`/problems/${row.problem}`)">
+            <el-link type="primary" underline="never" @click="$router.push(`/problems/${row.problem}`)">
               {{ row.problem_title }}
             </el-link>
           </template>
@@ -49,7 +49,7 @@
         </el-table-column>
         <el-table-column label="操作" width="90" fixed="right">
           <template #default="{ row }">
-            <el-link type="primary" :underline="false" @click="$router.push(`/submissions/${row.id}`)">详情</el-link>
+            <el-link type="primary" underline="never" @click="$router.push(`/submissions/${row.id}`)">详情</el-link>
           </template>
         </el-table-column>
       </el-table>

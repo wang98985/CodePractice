@@ -102,7 +102,7 @@
       >
         <el-table-column label="题目" min-width="220">
           <template #default="{ row }">
-            <el-link type="primary" :underline="false" @click.stop="$router.push(`/problems/${row.problem.id}`)">
+            <el-link type="primary" underline="never" @click.stop="$router.push(`/problems/${row.problem.id}`)">
               {{ row.problem.title }}
             </el-link>
             <el-tag
