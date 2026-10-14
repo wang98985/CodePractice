@@ -24,6 +24,7 @@ from .permissions import IsAdminRole, IsSuperAdminRole
 from .serializers import (
     AdminCreateSerializer,
     RegisterSerializer,
+    ResetPasswordSerializer,
     RoleTokenObtainPairSerializer,
     UserManageSerializer,
     UserProfileSerializer,
@@ -38,16 +39,27 @@ EMAIL_CODE_RESEND_SECONDS = 60
 
 
 class SendEmailCodeView(APIView):
-    """发送注册邮箱验证码（公开，仅 QQ 邮箱，60 秒重发限制）"""
+    """发送邮箱验证码（公开，仅 QQ 邮箱，60 秒重发限制）。
+
+    purpose=register（默认）：注册用，要求邮箱未注册；
+    purpose=reset：找回密码用，要求邮箱已注册。
+    """
 
     permission_classes = [permissions.AllowAny]
 
     def post(self, request):
         email = str(request.data.get("email") or "").strip().lower()
+        purpose = str(request.data.get("purpose") or "register").strip().lower()
+        if purpose not in {"register", "reset"}:
+            purpose = "register"
         if not is_qq_email(email):
-            return Response({"email": ["目前仅支持 QQ 邮箱注册（@qq.com）"]}, status=400)
-        if User.objects.filter(email__iexact=email).exists():
+            return Response({"email": ["目前仅支持 QQ 邮箱（@qq.com）"]}, status=400)
+
+        registered = User.objects.filter(email__iexact=email).exists()
+        if purpose == "register" and registered:
             return Response({"email": ["该邮箱已被注册"]}, status=400)
+        if purpose == "reset" and not registered:
+            return Response({"email": ["该邮箱尚未注册"]}, status=400)
 
         latest = (
             EmailCode.objects.filter(email__iexact=email).order_by("-created_at").first()
@@ -65,11 +77,12 @@ class SendEmailCodeView(APIView):
             expires_at=timezone.now() + timedelta(minutes=EMAIL_CODE_TTL_MINUTES),
         )
 
+        action = "找回密码" if purpose == "reset" else "注册"
         try:
             send_mail(
-                subject="【CodePractice】注册验证码",
+                subject=f"【CodePractice】{action}验证码",
                 message=(
-                    f"您的注册验证码为：{code}\n"
+                    f"您的{action}验证码为：{code}\n"
                     f"{EMAIL_CODE_TTL_MINUTES} 分钟内有效，请勿泄露给他人。"
                 ),
                 from_email=settings.DEFAULT_FROM_EMAIL,
@@ -106,6 +119,18 @@ class LoginView(TokenObtainPairView):
     serializer_class = RoleTokenObtainPairSerializer
 
 
+class ResetPasswordView(APIView):
+    """忘记密码：校验 QQ 邮箱验证码后重置密码（公开）"""
+
+    permission_classes = [permissions.AllowAny]
+
+    def post(self, request):
+        serializer = ResetPasswordSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response({"detail": "密码已重置，请使用新密码登录"})
+
+
 class MeView(generics.RetrieveUpdateAPIView):
     """当前登录用户信息查看/修改"""
 
@@ -127,7 +152,7 @@ class AdminUserViewSet(
     permission_classes = [IsAdminRole]
     serializer_class = UserManageSerializer
     filter_backends = [SearchFilter]
-    search_fields = ["username", "email"]
+    search_fields = ["nickname", "email"]
 
     def get_queryset(self):
         return User.objects.filter(role=User.Role.USER).order_by("-date_joined")

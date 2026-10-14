@@ -9,7 +9,7 @@
     <el-card shadow="never">
     <el-table v-loading="loading" :data="rows" stripe>
       <el-table-column prop="id" label="ID" width="72" />
-      <el-table-column prop="username" label="用户名" min-width="140" />
+      <el-table-column prop="nickname" label="昵称" min-width="140" />
       <el-table-column prop="email" label="邮箱" min-width="200" />
       <el-table-column label="角色" width="130">
         <template #default="{ row }">
@@ -47,8 +47,8 @@
   <!-- 创建管理员对话框 -->
   <el-dialog v-model="dialogVisible" title="创建管理员" width="420px">
     <el-form :model="form" label-width="80px">
-      <el-form-item label="用户名">
-        <el-input v-model="form.username" />
+      <el-form-item label="昵称">
+        <el-input v-model="form.nickname" />
       </el-form-item>
       <el-form-item label="邮箱">
         <el-input v-model="form.email" />
@@ -74,7 +74,7 @@ const rows = ref([])
 const loading = ref(false)
 const dialogVisible = ref(false)
 const creating = ref(false)
-const form = reactive({ username: '', email: '', password: '' })
+const form = reactive({ nickname: '', email: '', password: '' })
 
 const roleText = (r) => ({ admin: '管理员', super_admin: '超级管理员' }[r] || r)
 const formatTime = (t) => (t ? new Date(t).toLocaleString('zh-CN', { hour12: false }) : '-')
@@ -92,14 +92,14 @@ async function load() {
 }
 
 function openCreate() {
-  form.username = ''
+  form.nickname = ''
   form.email = ''
   form.password = ''
   dialogVisible.value = true
 }
 
 async function create() {
-  if (!form.username || !form.email || !form.password) {
+  if (!form.nickname || !form.email || !form.password) {
     ElMessage.warning('请填写完整信息')
     return
   }
@@ -118,7 +118,7 @@ async function create() {
 
 async function demote(row) {
   try {
-    await ElMessageBox.confirm(`确定将管理员 ${row.username} 降为普通用户？`, '确认', { type: 'warning' })
+    await ElMessageBox.confirm(`确定将管理员 ${row.nickname || row.email} 降为普通用户？`, '确认', { type: 'warning' })
     await setUserRole(row.id, 'user')
     ElMessage.success('已降级')
     load()

@@ -181,7 +181,7 @@ async function send() {
 .fab-button {
   width: 52px;
   height: 52px;
-  box-shadow: 0 6px 18px rgba(79, 70, 229, 0.42);
+  box-shadow: 0 6px 18px rgba(0, 113, 227, 0.42);
 }
 .assistant-panel {
   position: absolute;

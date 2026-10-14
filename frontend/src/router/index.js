@@ -5,6 +5,11 @@ const routes = [
   { path: '/login', component: () => import('@/views/auth/LoginView.vue'), meta: { public: true } },
   { path: '/register', component: () => import('@/views/auth/RegisterView.vue'), meta: { public: true } },
   {
+    path: '/forgot-password',
+    component: () => import('@/views/auth/ForgotPasswordView.vue'),
+    meta: { public: true },
+  },
+  {
     path: '/',
     component: () => import('@/layouts/MainLayout.vue'),
     children: [

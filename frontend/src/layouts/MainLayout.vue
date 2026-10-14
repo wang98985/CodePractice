@@ -68,7 +68,7 @@ const route = useRoute()
 const router = useRouter()
 
 const activeMenu = computed(() => '/' + route.path.split('/')[1])
-const displayName = computed(() => auth.user?.nickname || auth.user?.username || '')
+const displayName = computed(() => auth.user?.nickname || auth.user?.email || '')
 const roleText = computed(
   () => ({ user: '普通用户', admin: '管理员', super_admin: '超级管理员' }[auth.role] || auth.role)
 )
@@ -103,12 +103,12 @@ function handleCommand(cmd) {
 .header {
   display: flex;
   align-items: center;
-  height: 60px;
+  height: 56px;
   padding: 0;
-  background: rgba(255, 255, 255, 0.86);
-  backdrop-filter: saturate(180%) blur(12px);
-  border-bottom: 1px solid var(--c-border);
-  box-shadow: 0 1px 2px rgba(24, 32, 59, 0.04);
+  /* 纯色实底：不用 backdrop-filter，避免滚动时大面积重绘 */
+  background: #ffffff;
+  border-bottom: 1px solid var(--c-border-light);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
   z-index: 100;
 }
 .header-inner {
@@ -130,23 +130,21 @@ function handleCommand(cmd) {
 .logo-mark {
   width: 30px;
   height: 30px;
-  border-radius: 9px;
+  border-radius: 8px;
   display: flex;
   align-items: center;
   justify-content: center;
-  background: var(--brand-gradient);
+  background: var(--brand-500);
   color: #fff;
-  font-weight: 700;
+  font-weight: 600;
   font-size: 13px;
-  box-shadow: 0 4px 12px rgba(79, 70, 229, 0.3);
+  letter-spacing: 0.02em;
 }
 .logo-text {
-  font-size: 18px;
-  font-weight: 700;
-  background: var(--brand-gradient);
-  -webkit-background-clip: text;
-  background-clip: text;
-  color: transparent;
+  font-size: 17px;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  color: var(--c-text);
 }
 .menu {
   flex: 1;
@@ -166,7 +164,7 @@ function handleCommand(cmd) {
   color: var(--c-text);
 }
 .main {
-  padding: 24px;
+  padding: 32px 24px;
   background: var(--c-bg);
 }
 .main-inner {

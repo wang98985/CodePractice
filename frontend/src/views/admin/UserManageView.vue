@@ -5,7 +5,7 @@
     <div class="toolbar">
       <el-input
         v-model="search"
-        placeholder="搜索用户名/邮箱"
+        placeholder="搜索昵称/邮箱"
         clearable
         style="width: 220px"
         @keyup.enter="load(1)"
@@ -17,7 +17,7 @@
     <el-card shadow="never">
     <el-table v-loading="loading" :data="rows" stripe>
       <el-table-column prop="id" label="ID" width="72" />
-      <el-table-column prop="username" label="用户名" min-width="140" />
+      <el-table-column prop="nickname" label="昵称" min-width="140" />
       <el-table-column prop="email" label="邮箱" min-width="200" />
       <el-table-column label="状态" width="100">
         <template #default="{ row }">
@@ -114,7 +114,7 @@ async function toggleActive(row, val) {
 
 async function resetPassword(row) {
   try {
-    const { value } = await ElMessageBox.prompt(`为用户 ${row.username} 设置新密码（至少 6 位）`, '重置密码', {
+    const { value } = await ElMessageBox.prompt(`为用户 ${row.nickname || row.email} 设置新密码（至少 6 位）`, '重置密码', {
       inputType: 'password',
       inputPattern: /^.{6,}$/,
       inputErrorMessage: '密码至少 6 位',
@@ -127,7 +127,7 @@ async function resetPassword(row) {
 async function changeRole(row) {
   try {
     const { value } = await ElMessageBox.prompt(
-      `将 ${row.username} 的角色设置为（user / admin / super_admin）`,
+      `将 ${row.nickname || row.email} 的角色设置为（user / admin / super_admin）`,
       '修改角色',
       { inputValue: row.role }
     )

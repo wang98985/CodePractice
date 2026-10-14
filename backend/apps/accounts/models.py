@@ -3,10 +3,28 @@ from django.db import models
 
 
 class UserManager(DjangoUserManager):
-    def create_superuser(self, username, email=None, password=None, **extra_fields):
+    """以邮箱作为登录名（USERNAME_FIELD=email）。
+
+    AbstractUser 仍带有 username 列，这里统一把 username 自动设为邮箱，
+    界面上不再对外暴露 username，用户展示名使用 nickname。
+    """
+
+    def create_user(self, email, password=None, **extra_fields):
+        if not email:
+            raise ValueError("必须提供邮箱")
+        email = self.normalize_email(email).lower()
+        extra_fields.setdefault("username", email)
+        user = self.model(email=email, **extra_fields)
+        user.set_password(password)
+        user.save(using=self._db)
+        return user
+
+    def create_superuser(self, email, password=None, **extra_fields):
         # createsuperuser 创建的账号强制为超级管理员
         extra_fields.setdefault("role", self.model.Role.SUPER_ADMIN)
-        return super().create_superuser(username, email, password, **extra_fields)
+        extra_fields.setdefault("is_staff", True)
+        extra_fields.setdefault("is_superuser", True)
+        return self.create_user(email, password, **extra_fields)
 
 
 class User(AbstractUser):
@@ -16,6 +34,10 @@ class User(AbstractUser):
         USER = "user", "普通用户"
         ADMIN = "admin", "管理员"
         SUPER_ADMIN = "super_admin", "超级管理员"
+
+    # 登录凭证改为邮箱；nickname 作为统一展示名
+    USERNAME_FIELD = "email"
+    REQUIRED_FIELDS = []
 
     objects = UserManager()
 

@@ -20,7 +20,6 @@
           <UserAvatar :name="displayName" :size="76" />
           <div class="profile-card__name">
             <div class="name">{{ displayName }}</div>
-            <div class="username">@{{ info.username || '-' }}</div>
             <el-tag size="small" effect="plain" :type="roleTagType">{{ roleText }}</el-tag>
           </div>
         </div>
@@ -41,7 +40,7 @@
       <!-- 右：统计区 -->
       <div class="stat-area">
         <div class="stat-grid">
-          <StatCard label="总提交" :value="stats.submission_total ?? 0" :icon="Upload" color="#4f46e5" />
+          <StatCard label="总提交" :value="stats.submission_total ?? 0" :icon="Upload" color="#0071e3" />
           <StatCard label="通过提交" :value="stats.accepted_total ?? 0" :icon="CircleCheck" color="#10b981" />
           <StatCard label="通过题目" :value="stats.solved_count ?? 0" :icon="Medal" color="#f59e0b" />
           <StatCard label="尝试题目" :value="stats.attempted_count ?? 0" :icon="Aim" color="#8b5cf6" />
@@ -140,7 +139,7 @@
     <el-dialog v-model="editVisible" title="编辑资料" width="440px">
       <el-form :model="form" label-width="76px">
         <el-form-item label="昵称">
-          <el-input v-model="form.nickname" maxlength="32" show-word-limit placeholder="留空则显示用户名" />
+          <el-input v-model="form.nickname" maxlength="32" show-word-limit placeholder="设置你的昵称" />
         </el-form-item>
         <el-form-item label="个人简介">
           <el-input
@@ -191,7 +190,7 @@ const targetId = computed(() =>
   route.params.id ? Number(route.params.id) : auth.user?.id
 )
 const isSelf = computed(() => !!auth.user && targetId.value === auth.user.id)
-const displayName = computed(() => info.value.nickname || info.value.username || '未知用户')
+const displayName = computed(() => info.value.nickname || '未知用户')
 const roleText = computed(() => info.value.role_display || '普通用户')
 const roleTagType = computed(
   () => ({ user: 'info', admin: 'warning', super_admin: 'danger' }[info.value.role] || 'info')
@@ -279,11 +278,6 @@ watch(targetId, load)
   font-size: 20px;
   font-weight: 700;
   color: var(--c-text);
-}
-.profile-card__name .username {
-  font-size: 13px;
-  color: var(--c-text-secondary);
-  margin: 2px 0 6px;
 }
 .profile-card__bio {
   margin: 16px 0 0;

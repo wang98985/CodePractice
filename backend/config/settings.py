@@ -98,6 +98,11 @@ DATABASES = {
 
 AUTH_USER_MODEL = "accounts.User"
 
+AUTHENTICATION_BACKENDS = [
+    # 登录标识符支持邮箱（普通用户）或用户名（管理员沿用原登录方式）
+    "apps.accounts.backends.EmailOrUsernameBackend",
+]
+
 REST_FRAMEWORK = {
     "DEFAULT_AUTHENTICATION_CLASSES": (
         "rest_framework_simplejwt.authentication.JWTAuthentication",

@@ -14,8 +14,8 @@ export const useAuthStore = defineStore('auth', {
     isSuperAdmin: (s) => s.user?.role === 'super_admin',
   },
   actions: {
-    async login(username, password) {
-      const { data } = await apiLogin({ username, password })
+    async login(email, password) {
+      const { data } = await apiLogin({ email, password })
       this.accessToken = data.access
       this.refreshToken = data.refresh
       this.user = data.user

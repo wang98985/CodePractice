@@ -4,8 +4,8 @@
       <h2 class="title">CodePractice</h2>
       <p class="subtitle">在线代码练习评测平台</p>
       <el-form :model="form" label-position="top" @keyup.enter="submit">
-        <el-form-item label="用户名">
-          <el-input v-model="form.username" placeholder="用户名" />
+        <el-form-item label="邮箱 / 用户名">
+          <el-input v-model="form.email" placeholder="邮箱登录；管理员可填用户名" />
         </el-form-item>
         <el-form-item label="密码">
           <el-input v-model="form.password" type="password" show-password placeholder="密码" />
@@ -13,6 +13,9 @@
         <el-button type="primary" class="submit-btn" :loading="loading" @click="submit">
           登录
         </el-button>
+        <div class="links">
+          <router-link to="/forgot-password">忘记密码？</router-link>
+        </div>
         <div class="footer">
           还没有账号？
           <router-link to="/register">立即注册</router-link>
@@ -32,17 +35,17 @@ const auth = useAuthStore()
 const router = useRouter()
 const route = useRoute()
 
-const form = reactive({ username: '', password: '' })
+const form = reactive({ email: '', password: '' })
 const loading = ref(false)
 
 async function submit() {
-  if (!form.username || !form.password) {
-    ElMessage.warning('请输入用户名和密码')
+  if (!form.email || !form.password) {
+    ElMessage.warning('请输入邮箱/用户名和密码')
     return
   }
   loading.value = true
   try {
-    await auth.login(form.username, form.password)
+    await auth.login(form.email.trim(), form.password)
     ElMessage.success('登录成功')
     router.push(route.query.redirect || '/problems')
   } catch (e) {
@@ -59,9 +62,8 @@ async function submit() {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: radial-gradient(circle at 18% 18%, #e0e7ff 0%, transparent 55%),
-    radial-gradient(circle at 82% 82%, #dbeafe 0%, transparent 55%),
-    linear-gradient(135deg, #f6f7fb 0%, #eef1fb 100%);
+  /* 单层极淡径向光晕 + 纯灰底，成本低、无重绘 */
+  background: radial-gradient(1200px 600px at 50% -10%, #e8f2fd 0%, transparent 60%), #f5f5f7;
 }
 .auth-card {
   width: 380px;
@@ -74,11 +76,9 @@ async function submit() {
   text-align: center;
   margin: 8px 0 4px;
   font-size: 24px;
-  font-weight: 800;
-  background: var(--brand-gradient);
-  -webkit-background-clip: text;
-  background-clip: text;
-  color: transparent;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: var(--c-text);
 }
 .subtitle {
   text-align: center;
@@ -88,6 +88,11 @@ async function submit() {
 }
 .submit-btn {
   width: 100%;
+}
+.links {
+  text-align: right;
+  margin-top: 8px;
+  font-size: 13px;
 }
 .footer {
   text-align: center;

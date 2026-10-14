@@ -12,7 +12,7 @@ const props = defineProps({
 
 // 8 组渐变，按用户名哈希确定，同一用户颜色稳定
 const PALETTE = [
-  'linear-gradient(135deg,#6366f1,#4f46e5)',
+  'linear-gradient(135deg,#0a84ff,#0071e3)',
   'linear-gradient(135deg,#0ea5e9,#2563eb)',
   'linear-gradient(135deg,#10b981,#059669)',
   'linear-gradient(135deg,#f59e0b,#d97706)',

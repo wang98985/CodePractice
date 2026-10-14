@@ -18,7 +18,7 @@ defineProps({
   label: { type: String, required: true },
   value: { type: [String, Number], default: '-' },
   icon: { type: [Object, Function], default: () => DataLine },
-  color: { type: String, default: '#4f46e5' },
+  color: { type: String, default: '#0071e3' },
   hint: { type: String, default: '' },
 })
 </script>

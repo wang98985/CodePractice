@@ -7,7 +7,7 @@
         label="用户总数"
         :value="data.user_total ?? '-'"
         :icon="User"
-        color="#4f46e5"
+        color="#0071e3"
         :hint="`其中管理员 ${data.admin_total ?? '-'} 名`"
       />
       <StatCard label="题目总数" :value="data.problem_total ?? '-'" :icon="Notebook" color="#0ea5e9" />
