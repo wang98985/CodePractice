@@ -1,17 +1,26 @@
 <template>
-  <el-card>
-    <div class="toolbar">
-      <el-button type="primary" @click="openCreate">新建题目</el-button>
-      <el-button v-if="auth.isSuperAdmin" type="success" @click="importVisible = true">批量导入</el-button>
-      <el-button @click="load">刷新</el-button>
-    </div>
+  <div>
+    <PageHeader title="题目管理" subtitle="创建 / 编辑题目与测试用例，支持批量导入">
+      <template #actions>
+        <el-button type="primary" @click="openCreate">新建题目</el-button>
+        <el-button v-if="auth.isSuperAdmin" type="success" @click="importVisible = true">批量导入</el-button>
+        <el-button @click="load">刷新</el-button>
+      </template>
+    </PageHeader>
 
+    <el-card shadow="never">
     <el-table v-loading="loading" :data="rows" stripe>
       <el-table-column prop="id" label="ID" width="64" />
       <el-table-column prop="title" label="标题" min-width="220" />
       <el-table-column label="难度" width="90">
         <template #default="{ row }">
-          <span :style="{ color: difficultyColor(row.difficulty) }">{{ difficultyText(row.difficulty) }}</span>
+          <el-tag
+            size="small"
+            effect="plain"
+            :style="{ color: difficultyColor(row.difficulty), borderColor: difficultyColor(row.difficulty) }"
+          >
+            {{ difficultyText(row.difficulty) }}
+          </el-tag>
         </template>
       </el-table-column>
       <el-table-column label="标签" min-width="140">
@@ -48,7 +57,8 @@
       @size-change="onPageSizeChange"
       @current-change="load"
     />
-  </el-card>
+    </el-card>
+  </div>
 
   <!-- 批量导入对话框（仅超管） -->
   <el-dialog v-model="importVisible" title="批量导入题目" width="780px" top="4vh">
@@ -231,6 +241,7 @@ import {
 } from '@/api/problems'
 import { useAuthStore } from '@/stores/auth'
 import { difficultyColor, difficultyText } from '@/utils/verdict'
+import PageHeader from '@/components/PageHeader.vue'
 
 const auth = useAuthStore()
 
@@ -482,15 +493,6 @@ onMounted(async () => {
 </script>
 
 <style scoped>
-.toolbar {
-  display: flex;
-  gap: 12px;
-  margin-bottom: 16px;
-}
-.pager {
-  margin-top: 16px;
-  justify-content: flex-end;
-}
 .unit {
   margin: 0 12px 0 6px;
   color: #909399;

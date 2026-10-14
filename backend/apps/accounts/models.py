@@ -23,6 +23,8 @@ class User(AbstractUser):
         "角色", max_length=20, choices=Role.choices, default=Role.USER, db_index=True
     )
     email = models.EmailField("邮箱", unique=True)
+    nickname = models.CharField("昵称", max_length=32, blank=True, default="")
+    bio = models.CharField("个人简介", max_length=200, blank=True, default="")
 
     class Meta:
         verbose_name = "用户"

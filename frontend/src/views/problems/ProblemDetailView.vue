@@ -2,14 +2,18 @@
   <div v-loading="loading" class="problem-detail">
     <el-row :gutter="16">
       <!-- 左侧：题面 -->
-      <el-col :span="13">
-        <el-card>
+      <el-col :xs="24" :lg="13">
+        <el-card class="desc-card">
           <div class="problem-header">
             <h2 class="title">{{ problem.id }}. {{ problem.title }}</h2>
             <div class="meta">
-              <span class="difficulty" :style="{ color: difficultyColor(problem.difficulty) }">
+              <el-tag
+                size="small"
+                effect="plain"
+                :style="{ color: difficultyColor(problem.difficulty), borderColor: difficultyColor(problem.difficulty) }"
+              >
                 {{ difficultyText(problem.difficulty) }}
-              </span>
+              </el-tag>
               <el-divider direction="vertical" />
               <span>时限 {{ problem.time_limit_ms }}ms</span>
               <el-divider direction="vertical" />
@@ -49,8 +53,8 @@
       </el-col>
 
       <!-- 右侧：提交面板 -->
-      <el-col :span="11">
-        <el-card>
+      <el-col :xs="24" :lg="11">
+        <el-card class="submit-card">
           <div class="submit-header">
             <span class="submit-title">提交代码</span>
             <el-select v-model="language" style="width: 140px">
@@ -192,18 +196,22 @@ async function pollStatus(id) {
 </script>
 
 <style scoped>
+.desc-card {
+  margin-bottom: 16px;
+}
+.submit-card {
+  margin-bottom: 16px;
+}
 .problem-header .title {
   margin: 0 0 8px;
+  font-size: 20px;
 }
 .meta {
   display: flex;
   align-items: center;
-  color: #606266;
+  color: var(--c-text-regular);
   font-size: 13px;
   margin-bottom: 12px;
-}
-.difficulty {
-  font-weight: 600;
 }
 .sample-case {
   display: flex;
@@ -216,13 +224,13 @@ async function pollStatus(id) {
 }
 .io-label {
   font-size: 12px;
-  color: #909399;
+  color: var(--c-text-secondary);
   margin-bottom: 4px;
 }
 .io-pre {
-  background: #f5f7fa;
-  border: 1px solid #ebeef5;
-  border-radius: 4px;
+  background: var(--c-bg);
+  border: 1px solid var(--c-border);
+  border-radius: var(--radius-sm);
   padding: 8px 12px;
   margin: 0;
   font-size: 13px;
@@ -253,7 +261,7 @@ async function pollStatus(id) {
 }
 .verdict-stats {
   font-size: 12px;
-  color: #606266;
+  color: var(--c-text-regular);
   display: flex;
   gap: 8px;
   align-items: center;

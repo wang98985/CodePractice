@@ -1,0 +1,236 @@
+/* ============================================================
+   全局主题层（在 element-plus/dist/index.css 之后引入）
+   集中管理品牌色 / 中性色 / 圆角 / 阴影 / 组件微调 / 工具类
+   —— 品牌主色集中在下方 --brand-* 令牌，一处可改（可回退为 #409eff）
+   ============================================================ */
+
+:root {
+  /* 品牌主色（靛蓝体系） */
+  --brand-50: #eef2ff;
+  --brand-100: #e0e7ff;
+  --brand-200: #c7d2fe;
+  --brand-300: #a5b4fc;
+  --brand-400: #818cf8;
+  --brand-500: #4f46e5;
+  --brand-600: #4338ca;
+  --brand-700: #3730a3;
+  --brand-gradient: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
+
+  /* 中性色阶 */
+  --c-bg: #f6f7fb;
+  --c-surface: #ffffff;
+  --c-border: #e6e8ef;
+  --c-border-light: #eff1f6;
+  --c-text: #1f2430;
+  --c-text-regular: #4b5563;
+  --c-text-secondary: #8a94a6;
+
+  /* 圆角 */
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+
+  /* 三级阴影 */
+  --shadow-1: 0 1px 2px rgba(24, 32, 59, 0.06);
+  --shadow-2: 0 6px 18px rgba(24, 32, 59, 0.08);
+  --shadow-3: 0 14px 40px rgba(24, 32, 59, 0.12);
+
+  --font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI',
+    'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', 'Helvetica Neue', Arial, sans-serif;
+}
+
+/* ---------------- Element Plus 变量覆盖（全局换肤） ---------------- */
+:root {
+  --el-color-primary: var(--brand-500);
+  --el-color-primary-light-3: #7e7eed;
+  --el-color-primary-light-5: #a7a2f2;
+  --el-color-primary-light-7: #cac7f7;
+  --el-color-primary-light-8: #dcdafa;
+  --el-color-primary-light-9: #edecfc;
+  --el-color-primary-dark-2: var(--brand-600);
+
+  --el-font-family: var(--font-family);
+  --el-border-radius-base: var(--radius-sm);
+  --el-border-radius-small: 6px;
+  --el-border-radius-round: 999px;
+
+  --el-text-color-primary: var(--c-text);
+  --el-text-color-regular: var(--c-text-regular);
+  --el-text-color-secondary: var(--c-text-secondary);
+
+  --el-border-color: var(--c-border);
+  --el-border-color-light: var(--c-border-light);
+  --el-border-color-lighter: var(--c-border-light);
+  --el-fill-color-light: #f7f8fc;
+  --el-fill-color-blank: var(--c-surface);
+
+  --el-box-shadow: var(--shadow-1);
+  --el-box-shadow-light: var(--shadow-1);
+}
+
+/* ---------------- 组件级微调 ---------------- */
+/* 卡片：圆角 + 轻边框 + 悬浮阴影 */
+.el-card {
+  border-radius: var(--radius-md);
+  border-color: var(--c-border);
+  box-shadow: var(--shadow-1);
+  transition: box-shadow 0.2s ease, transform 0.2s ease;
+}
+.el-card.is-hover-shadow:hover {
+  box-shadow: var(--shadow-2);
+}
+.el-card__header {
+  font-weight: 600;
+  border-bottom-color: var(--c-border-light);
+  padding: 14px 20px;
+}
+.el-card__body {
+  padding: 20px;
+}
+
+/* 表格：表头底色 + 行 hover */
+.el-table {
+  --el-table-header-bg-color: #f7f8fc;
+  --el-table-header-text-color: var(--c-text-regular);
+  --el-table-border-color: var(--c-border-light);
+  --el-table-row-hover-bg-color: #f5f6ff;
+  border-radius: var(--radius-sm);
+}
+.el-table th.el-table__cell {
+  font-weight: 600;
+}
+
+/* 按钮：字重 + 主按钮投影 */
+.el-button {
+  font-weight: 500;
+}
+.el-button--primary:not(.is-text):not(.is-link):not(.is-plain) {
+  box-shadow: 0 4px 12px rgba(79, 70, 229, 0.25);
+}
+.el-button--primary:not(.is-text):not(.is-link):not(.is-plain):hover {
+  box-shadow: 0 6px 16px rgba(79, 70, 229, 0.32);
+}
+
+/* 标签 / 分页 / 对话框 圆角统一 */
+.el-tag {
+  border-radius: 999px;
+  font-weight: 500;
+}
+.el-pagination {
+  margin-top: 16px;
+  justify-content: flex-end;
+}
+.el-dialog {
+  border-radius: var(--radius-md);
+  overflow: hidden;
+}
+.el-dialog__header {
+  font-weight: 600;
+  margin-right: 0;
+}
+.el-dropdown-menu__item {
+  border-radius: 6px;
+  margin: 2px 6px;
+}
+
+/* 顶部横向菜单：选中态品牌化 */
+.el-menu--horizontal {
+  border-bottom: none !important;
+}
+.el-menu--horizontal > .el-menu-item {
+  font-weight: 500;
+  color: var(--c-text-regular);
+}
+.el-menu--horizontal > .el-menu-item.is-active {
+  color: var(--brand-500);
+}
+
+/* 表单控件圆角 */
+.el-input__wrapper,
+.el-textarea__inner,
+.el-select__wrapper {
+  border-radius: var(--radius-sm);
+}
+
+/* 自定义滚动条 */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-thumb {
+  background: #d3d8e3;
+  border-radius: 999px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #bcc2d2;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+/* ---------------- 通用工具类 ---------------- */
+.page-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 20px;
+}
+.page-header .page-title {
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--c-text);
+  margin: 0;
+  line-height: 1.3;
+}
+.page-header .page-subtitle {
+  margin: 6px 0 0;
+  font-size: 13px;
+  color: var(--c-text-secondary);
+}
+.page-header .page-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-shrink: 0;
+}
+
+.toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+  padding: 16px 20px;
+  background: var(--c-surface);
+  border: 1px solid var(--c-border);
+  border-radius: var(--radius-md);
+  margin-bottom: 16px;
+  box-shadow: var(--shadow-1);
+}
+.toolbar .toolbar-spacer {
+  flex: 1;
+}
+
+.card-grid {
+  display: grid;
+  gap: 16px;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+}
+
+.text-muted {
+  color: var(--c-text-secondary);
+}
+
+/* ---------------- 路由过渡 ---------------- */
+.fade-slide-enter-active,
+.fade-slide-leave-active {
+  transition: opacity 0.22s ease, transform 0.22s ease;
+}
+.fade-slide-enter-from {
+  opacity: 0;
+  transform: translateY(8px);
+}
+.fade-slide-leave-to {
+  opacity: 0;
+  transform: translateY(-8px);
+}

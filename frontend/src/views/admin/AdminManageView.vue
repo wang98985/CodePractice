@@ -1,9 +1,12 @@
 <template>
-  <el-card>
-    <div class="toolbar">
-      <el-button type="primary" @click="openCreate">创建管理员</el-button>
-    </div>
+  <div>
+    <PageHeader title="管理员管理" subtitle="创建管理员账号或将其降为普通用户（仅超级管理员）">
+      <template #actions>
+        <el-button type="primary" @click="openCreate">创建管理员</el-button>
+      </template>
+    </PageHeader>
 
+    <el-card shadow="never">
     <el-table v-loading="loading" :data="rows" stripe>
       <el-table-column prop="id" label="ID" width="72" />
       <el-table-column prop="username" label="用户名" min-width="140" />
@@ -38,7 +41,8 @@
         </template>
       </el-table-column>
     </el-table>
-  </el-card>
+    </el-card>
+  </div>
 
   <!-- 创建管理员对话框 -->
   <el-dialog v-model="dialogVisible" title="创建管理员" width="420px">
@@ -64,6 +68,7 @@
 import { onMounted, reactive, ref } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { createAdmin, listAdmins, setUserRole } from '@/api/admin'
+import PageHeader from '@/components/PageHeader.vue'
 
 const rows = ref([])
 const loading = ref(false)
@@ -122,9 +127,3 @@ async function demote(row) {
 
 onMounted(load)
 </script>
-
-<style scoped>
-.toolbar {
-  margin-bottom: 16px;
-}
-</style>

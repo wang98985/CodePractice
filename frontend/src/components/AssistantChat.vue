@@ -48,7 +48,10 @@
           </div>
           <div v-else class="bubble user-bubble">{{ m.content }}</div>
         </div>
-        <el-empty v-if="!messages.length" description="向 AI 助理提问，例如：这道题的思路是什么？" :image-size="60" />
+        <EmptyState
+          v-if="!messages.length"
+          description="向 AI 助理提问，例如：这道题的思路是什么？"
+        />
       </div>
 
       <div class="input-row">
@@ -88,6 +91,7 @@ import {
 } from '@/api/assistant'
 import { useAssistantStore } from '@/stores/assistant'
 import MarkdownView from '@/components/MarkdownView.vue'
+import EmptyState from '@/components/EmptyState.vue'
 
 const store = useAssistantStore()
 const sessions = ref([])
@@ -177,7 +181,7 @@ async function send() {
 .fab-button {
   width: 52px;
   height: 52px;
-  box-shadow: 0 4px 12px rgba(64, 158, 255, 0.4);
+  box-shadow: 0 6px 18px rgba(79, 70, 229, 0.42);
 }
 .assistant-panel {
   position: absolute;
@@ -187,6 +191,8 @@ async function send() {
   height: 560px;
   display: flex;
   flex-direction: column;
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-3);
 }
 .panel-header {
   display: flex;
@@ -216,16 +222,17 @@ async function send() {
 }
 .bubble {
   max-width: 85%;
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   padding: 8px 12px;
   font-size: 13px;
 }
 .assistant-bubble {
-  background: #f4f4f5;
+  background: var(--c-bg);
+  border: 1px solid var(--c-border-light);
   width: 85%;
 }
 .user-bubble {
-  background: #409eff;
+  background: var(--brand-gradient);
   color: #fff;
   white-space: pre-wrap;
 }
@@ -234,6 +241,6 @@ async function send() {
   gap: 8px;
   align-items: flex-end;
   padding-top: 8px;
-  border-top: 1px solid #ebeef5;
+  border-top: 1px solid var(--c-border-light);
 }
 </style>

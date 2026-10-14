@@ -1,5 +1,7 @@
 <template>
-  <el-card>
+  <div>
+    <PageHeader title="用户管理" subtitle="查看与管理平台普通用户（启用 / 禁用、重置密码、调整角色）" />
+
     <div class="toolbar">
       <el-input
         v-model="search"
@@ -12,6 +14,7 @@
       <el-button type="primary" @click="load(1)">搜索</el-button>
     </div>
 
+    <el-card shadow="never">
     <el-table v-loading="loading" :data="rows" stripe>
       <el-table-column prop="id" label="ID" width="72" />
       <el-table-column prop="username" label="用户名" min-width="140" />
@@ -55,14 +58,14 @@
     </el-table>
 
     <el-pagination
-      class="pagination"
       layout="prev, pager, next, total"
       :total="total"
       :page-size="pageSize"
       :current-page="page"
       @current-change="load"
     />
-  </el-card>
+    </el-card>
+  </div>
 </template>
 
 <script setup>
@@ -70,6 +73,7 @@ import { onMounted, ref } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { listUsers, patchUser, setUserRole } from '@/api/admin'
 import { useAuthStore } from '@/stores/auth'
+import PageHeader from '@/components/PageHeader.vue'
 
 const auth = useAuthStore()
 const rows = ref([])
@@ -137,15 +141,3 @@ async function changeRole(row) {
 
 onMounted(() => load(1))
 </script>
-
-<style scoped>
-.toolbar {
-  display: flex;
-  gap: 12px;
-  margin-bottom: 16px;
-}
-.pagination {
-  margin-top: 16px;
-  justify-content: flex-end;
-}
-</style>

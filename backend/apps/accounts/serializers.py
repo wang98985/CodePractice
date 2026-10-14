@@ -75,8 +75,25 @@ class RoleTokenObtainPairSerializer(TokenObtainPairSerializer):
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
-        fields = ["id", "username", "email", "role", "is_active", "date_joined"]
+        fields = [
+            "id", "username", "email", "nickname", "bio",
+            "role", "is_active", "date_joined",
+        ]
         read_only_fields = ["id", "role", "is_active", "date_joined"]
+
+
+class UserProfileSerializer(serializers.ModelSerializer):
+    """用户主页资料序列化器（含角色显示名）"""
+
+    role_display = serializers.CharField(source="get_role_display", read_only=True)
+
+    class Meta:
+        model = User
+        fields = [
+            "id", "username", "nickname", "bio",
+            "role", "role_display", "date_joined",
+        ]
+        read_only_fields = fields
 
 
 class UserManageSerializer(serializers.ModelSerializer):

@@ -11,6 +11,8 @@ const routes = [
       { path: '', redirect: '/problems' },
       { path: 'problems', component: () => import('@/views/problems/ProblemListView.vue') },
       { path: 'problems/:id', component: () => import('@/views/problems/ProblemDetailView.vue') },
+      { path: 'profile', component: () => import('@/views/profile/ProfileView.vue') },
+      { path: 'users/:id', component: () => import('@/views/profile/ProfileView.vue') },
       { path: 'submissions', component: () => import('@/views/submissions/SubmissionListView.vue') },
       { path: 'submissions/:id', component: () => import('@/views/submissions/SubmissionDetailView.vue') },
       { path: 'admin', redirect: '/admin/problems' },

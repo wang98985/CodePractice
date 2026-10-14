@@ -17,6 +17,7 @@ from rest_framework_simplejwt.views import TokenObtainPairView
 
 from apps.problems.models import Problem
 from apps.submissions.models import Submission
+from apps.judge.verdicts import Verdict
 
 from .models import EmailCode, User
 from .permissions import IsAdminRole, IsSuperAdminRole
@@ -25,6 +26,7 @@ from .serializers import (
     RegisterSerializer,
     RoleTokenObtainPairSerializer,
     UserManageSerializer,
+    UserProfileSerializer,
     UserSerializer,
     is_qq_email,
 )
@@ -205,3 +207,81 @@ class AdminDashboardView(APIView):
                 "submission_trend_7d": trend,
             }
         )
+
+
+class UserProfileView(generics.RetrieveAPIView):
+    """用户主页：资料 + 练习统计 + 最近提交（需登录）"""
+
+    permission_classes = [permissions.IsAuthenticated]
+    queryset = User.objects.all()
+
+    def retrieve(self, request, *args, **kwargs):
+        user = self.get_object()
+        qs = Submission.objects.filter(user=user)
+
+        submission_total = qs.count()
+        accepted_total = qs.filter(status=Verdict.ACCEPTED).count()
+        solved_ids = set(
+            qs.filter(status=Verdict.ACCEPTED).values_list("problem_id", flat=True)
+        )
+        attempted_ids = set(qs.values_list("problem_id", flat=True))
+
+        # 难度分布（已通过题目按 difficulty 计数）
+        difficulty_solved = {"easy": 0, "medium": 0, "hard": 0}
+        if solved_ids:
+            for item in (
+                Problem.objects.filter(id__in=solved_ids)
+                .values("difficulty")
+                .annotate(count=Count("id"))
+            ):
+                if item["difficulty"] in difficulty_solved:
+                    difficulty_solved[item["difficulty"]] = item["count"]
+
+        language_distribution = [
+            {"language": item["language"], "count": item["count"]}
+            for item in qs.values("language").annotate(count=Count("id")).order_by("-count")
+        ]
+        status_distribution = [
+            {"status": item["status"], "count": item["count"]}
+            for item in qs.values("status").annotate(count=Count("id")).order_by("-count")
+        ]
+
+        recent_submissions = [
+            {
+                "id": s.id,
+                "problem": {
+                    "id": s.problem_id,
+                    "title": s.problem.title,
+                    "difficulty": s.problem.difficulty,
+                },
+                "language": s.language,
+                "status": s.status,
+                "time_used_ms": s.time_used_ms,
+                "memory_used_kb": s.memory_used_kb,
+                "created_at": s.created_at,
+            }
+            for s in qs.select_related("problem").order_by("-created_at")[:10]
+        ]
+
+        data = {
+            "user": UserProfileSerializer(user).data,
+            "stats": {
+                "submission_total": submission_total,
+                "accepted_total": accepted_total,
+                "solved_count": len(solved_ids),
+                "attempted_count": len(attempted_ids),
+                "acceptance_rate": (
+                    round(accepted_total / submission_total * 100, 1)
+                    if submission_total
+                    else 0.0
+                ),
+                "difficulty_solved": difficulty_solved,
+                "language_distribution": language_distribution,
+                "status_distribution": status_distribution,
+            },
+            "recent_submissions": recent_submissions,
+        }
+        if request.user.id == user.id:
+            data["solved_problem_ids"] = sorted(solved_ids)
+        return Response(data)
+

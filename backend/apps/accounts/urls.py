@@ -10,6 +10,7 @@ from .views import (
     MeView,
     RegisterView,
     SendEmailCodeView,
+    UserProfileView,
 )
 
 router = DefaultRouter()
@@ -23,5 +24,6 @@ urlpatterns = [
     path("auth/refresh/", TokenRefreshView.as_view(), name="auth-refresh"),
     path("auth/me/", MeView.as_view(), name="auth-me"),
     path("admin/dashboard/", AdminDashboardView.as_view(), name="admin-dashboard"),
+    path("users/<int:pk>/profile/", UserProfileView.as_view(), name="user-profile"),
     path("", include(router.urls)),
 ]

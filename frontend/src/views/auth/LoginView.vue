@@ -59,20 +59,30 @@ async function submit() {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: linear-gradient(135deg, #e0f0ff 0%, #f5f7fa 100%);
+  background: radial-gradient(circle at 18% 18%, #e0e7ff 0%, transparent 55%),
+    radial-gradient(circle at 82% 82%, #dbeafe 0%, transparent 55%),
+    linear-gradient(135deg, #f6f7fb 0%, #eef1fb 100%);
 }
 .auth-card {
   width: 380px;
-  padding: 8px 12px;
+  padding: 12px 16px;
+  border: none;
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-3);
 }
 .title {
   text-align: center;
   margin: 8px 0 4px;
-  color: #409eff;
+  font-size: 24px;
+  font-weight: 800;
+  background: var(--brand-gradient);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
 }
 .subtitle {
   text-align: center;
-  color: #909399;
+  color: var(--c-text-secondary);
   font-size: 13px;
   margin-bottom: 20px;
 }
@@ -83,6 +93,6 @@ async function submit() {
   text-align: center;
   margin-top: 12px;
   font-size: 13px;
-  color: #909399;
+  color: var(--c-text-secondary);
 }
 </style>
