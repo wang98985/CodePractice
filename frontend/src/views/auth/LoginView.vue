@@ -5,7 +5,7 @@
       <p class="subtitle">在线代码练习评测平台</p>
       <el-form :model="form" label-position="top" @keyup.enter="submit">
         <el-form-item label="邮箱 / 用户名">
-          <el-input v-model="form.email" placeholder="邮箱登录；管理员可填用户名" />
+          <el-input v-model="form.email" placeholder="请输入邮箱；超级管理员可填原用户名" />
         </el-form-item>
         <el-form-item label="密码">
           <el-input v-model="form.password" type="password" show-password placeholder="密码" />

@@ -28,8 +28,9 @@
       <el-table-column prop="date_joined" label="创建时间" width="180">
         <template #default="{ row }">{{ formatTime(row.date_joined) }}</template>
       </el-table-column>
-      <el-table-column label="操作" width="180" fixed="right">
+      <el-table-column label="操作" width="240" fixed="right">
         <template #default="{ row }">
+          <el-button size="small" @click="resetPwd(row)">重置密码</el-button>
           <el-button
             v-if="row.role === 'admin'"
             size="small"
@@ -54,9 +55,13 @@
         <el-input v-model="form.email" />
       </el-form-item>
       <el-form-item label="初始密码">
-        <el-input v-model="form.password" show-password />
+        <el-input v-model="form.password" show-password placeholder="至少 6 位" />
+      </el-form-item>
+      <el-form-item label="确认密码">
+        <el-input v-model="form.password2" show-password />
       </el-form-item>
     </el-form>
+    <p class="dialog-tip">管理员请使用「邮箱 + 初始密码」登录</p>
     <template #footer>
       <el-button @click="dialogVisible = false">取消</el-button>
       <el-button type="primary" :loading="creating" @click="create">创建</el-button>
@@ -67,14 +72,14 @@
 <script setup>
 import { onMounted, reactive, ref } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { createAdmin, listAdmins, setUserRole } from '@/api/admin'
+import { createAdmin, listAdmins, resetAdminPassword, setUserRole } from '@/api/admin'
 import PageHeader from '@/components/PageHeader.vue'
 
 const rows = ref([])
 const loading = ref(false)
 const dialogVisible = ref(false)
 const creating = ref(false)
-const form = reactive({ nickname: '', email: '', password: '' })
+const form = reactive({ nickname: '', email: '', password: '', password2: '' })
 
 const roleText = (r) => ({ admin: '管理员', super_admin: '超级管理员' }[r] || r)
 const formatTime = (t) => (t ? new Date(t).toLocaleString('zh-CN', { hour12: false }) : '-')
@@ -95,6 +100,7 @@ function openCreate() {
   form.nickname = ''
   form.email = ''
   form.password = ''
+  form.password2 = ''
   dialogVisible.value = true
 }
 
@@ -103,10 +109,22 @@ async function create() {
     ElMessage.warning('请填写完整信息')
     return
   }
+  if (form.password.length < 6) {
+    ElMessage.warning('初始密码至少 6 位')
+    return
+  }
+  if (form.password !== form.password2) {
+    ElMessage.warning('两次输入的密码不一致')
+    return
+  }
   creating.value = true
   try {
-    await createAdmin({ ...form })
-    ElMessage.success('管理员创建成功')
+    await createAdmin({
+      nickname: form.nickname,
+      email: form.email,
+      password: form.password
+    })
+    ElMessage.success('管理员创建成功，请使用「邮箱 + 初始密码」登录')
     dialogVisible.value = false
     load()
   } catch (e) {
@@ -114,6 +132,22 @@ async function create() {
   } finally {
     creating.value = false
   }
+}
+
+async function resetPwd(row) {
+  try {
+    const { value } = await ElMessageBox.prompt(
+      `为 ${row.nickname || row.email} 设置新密码`,
+      '重置密码',
+      {
+        inputType: 'password',
+        inputPlaceholder: '至少 6 位',
+        inputValidator: (v) => (v && v.length >= 6) || '密码至少 6 位'
+      }
+    )
+    await resetAdminPassword(row.id, value)
+    ElMessage.success('密码已重置，请使用「邮箱 + 新密码」登录')
+  } catch { /* 取消 */ }
 }
 
 async function demote(row) {
@@ -127,3 +161,14 @@ async function demote(row) {
 
 onMounted(load)
 </script>
+
+<style scoped>
+.dialog-tip {
+  margin: 0;
+  padding: 8px 12px;
+  border-radius: var(--radius-sm);
+  background: var(--c-bg);
+  color: var(--c-text-secondary);
+  font-size: 12px;
+}
+</style>

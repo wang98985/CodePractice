@@ -159,17 +159,28 @@ class AdminUserViewSet(
 
     @action(detail=True, methods=["patch"], permission_classes=[IsSuperAdminRole], url_path="set-role")
     def set_role(self, request, pk=None):
-        """超管修改任意用户角色"""
-        user = self.get_object()
+        """超管修改用户角色（含把管理员降为普通用户）。
+
+        不能沿用 self.get_object()：本 viewset 的 queryset 只含普通用户，
+        管理员不在其中会导致改角色时直接 404，这里按 pk 直接取、绕过角色过滤。
+        """
+        user = User.objects.filter(pk=pk).first()
+        if user is None:
+            return Response({"detail": "用户不存在"}, status=status.HTTP_404_NOT_FOUND)
         role = request.data.get("role")
-        if role not in User.Role.values:
+        if role not in (User.Role.USER, User.Role.ADMIN):
             return Response({"detail": "无效角色"}, status=status.HTTP_400_BAD_REQUEST)
-        if user == request.user and role != User.Role.SUPER_ADMIN:
+        if user.role == User.Role.SUPER_ADMIN:
             return Response(
-                {"detail": "不能降级自己的超级管理员账号"}, status=status.HTTP_400_BAD_REQUEST
+                {"detail": "不能修改超级管理员的角色"}, status=status.HTTP_400_BAD_REQUEST
             )
         user.role = role
-        user.save(update_fields=["role"])
+        update_fields = ["role"]
+        # 降为普通用户时一并回收 Django admin 后台访问权限
+        if role == User.Role.USER and user.is_staff:
+            user.is_staff = False
+            update_fields.append("is_staff")
+        user.save(update_fields=update_fields)
         return Response(UserManageSerializer(user).data)
 
 
@@ -178,7 +189,7 @@ class AdminViewSet(
     mixins.CreateModelMixin,
     viewsets.GenericViewSet,
 ):
-    """管理端-管理员管理（仅超管）：列表/创建"""
+    """管理端-管理员管理（仅超管）：列表/创建/重置密码"""
 
     permission_classes = [IsSuperAdminRole]
 
@@ -189,6 +200,17 @@ class AdminViewSet(
 
     def get_serializer_class(self):
         return UserManageSerializer if self.action == "list" else AdminCreateSerializer
+
+    @action(detail=True, methods=["post"], url_path="reset-password")
+    def reset_password(self, request, pk=None):
+        """超管重置管理员密码（管理员不在普通用户列表中，这是唯一的补救入口）"""
+        user = self.get_object()
+        password = str(request.data.get("password") or "")
+        if len(password) < 6:
+            return Response({"detail": "密码至少 6 位"}, status=status.HTTP_400_BAD_REQUEST)
+        user.set_password(password)
+        user.save(update_fields=["password"])
+        return Response({"detail": "密码已重置"})
 
 
 class AdminDashboardView(APIView):

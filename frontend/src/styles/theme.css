@@ -259,6 +259,17 @@
   grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
 }
 
+/* 全局链接：去掉浏览器默认的蓝色下划线，统一为品牌蓝 */
+a {
+  color: var(--brand-500);
+  text-decoration: none;
+  transition: color var(--motion-fast) ease;
+}
+a:hover {
+  color: var(--brand-600, var(--brand-500));
+  text-decoration: underline;
+}
+
 /* 手机端卡片列表（题库 / 我的提交 / 个人主页最近提交复用） */
 .list-cards {
   display: flex;
@@ -276,6 +287,7 @@
 }
 .list-card.is-link {
   cursor: pointer;
+  text-decoration: none;
   transition: border-color var(--motion-fast) ease, box-shadow var(--motion-fast) ease;
 }
 .list-card.is-link:active {

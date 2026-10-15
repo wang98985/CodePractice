@@ -6,4 +6,6 @@ export const setUserRole = (id, role) =>
   request.patch(`/admin/users/${id}/set-role/`, { role })
 export const listAdmins = () => request.get('/admin/admins/')
 export const createAdmin = (data) => request.post('/admin/admins/', data)
+export const resetAdminPassword = (id, password) =>
+  request.post(`/admin/admins/${id}/reset-password/`, { password })
 export const fetchDashboard = () => request.get('/admin/dashboard/')
