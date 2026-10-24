@@ -74,3 +74,30 @@ class TestCase(models.Model):
 
     def __str__(self):
         return f"TestCase#{self.pk} of Problem#{self.problem_id}"
+
+
+class Favorite(models.Model):
+    """用户收藏的题目（同一用户对同一题目只能收藏一次）"""
+
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.CASCADE,
+        related_name="favorites", verbose_name="用户",
+    )
+    problem = models.ForeignKey(
+        Problem, on_delete=models.CASCADE,
+        related_name="favorites", verbose_name="题目",
+    )
+    created_at = models.DateTimeField("收藏时间", auto_now_add=True)
+
+    class Meta:
+        verbose_name = "题目收藏"
+        verbose_name_plural = "题目收藏"
+        ordering = ["-created_at"]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["user", "problem"], name="uniq_user_problem_favorite"
+            )
+        ]
+
+    def __str__(self):
+        return f"Favorite#{self.pk} user={self.user_id} problem={self.problem_id}"

@@ -5,7 +5,22 @@
       <el-col :xs="24" :lg="13">
         <el-card class="desc-card">
           <div class="problem-header">
-            <h2 class="title">{{ problem.id }}. {{ problem.title }}</h2>
+            <div class="title-row">
+              <h2 class="title">{{ problem.id }}. {{ problem.title }}</h2>
+              <el-button
+                size="small"
+                :type="favorited ? 'primary' : ''"
+                :plain="favorited"
+                :loading="favLoading"
+                @click="toggleFav"
+              >
+                <el-icon style="margin-right: 4px">
+                  <StarFilled v-if="favorited" />
+                  <Star v-else />
+                </el-icon>
+                {{ favorited ? '已收藏' : '收藏' }}
+              </el-button>
+            </div>
             <div class="meta">
               <el-tag
                 size="small"
@@ -103,7 +118,9 @@
 import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 import { useRoute } from 'vue-router'
 import { ElMessage } from 'element-plus'
+import { Star, StarFilled } from '@element-plus/icons-vue'
 import { getProblem } from '@/api/problems'
+import { toggleFavorite } from '@/api/favorites'
 import { createSubmission, getSubmissionStatus } from '@/api/submissions'
 import { useAuthStore } from '@/stores/auth'
 import { useAssistantStore } from '@/stores/assistant'
@@ -128,6 +145,8 @@ const language = ref('python')
 const submitting = ref(false)
 const verdict = ref(null)
 const lastSubmissionId = ref(null)
+const favorited = ref(false)
+const favLoading = ref(false)
 let pollTimer = null
 
 const langText = computed(() => language.value)
@@ -136,6 +155,7 @@ onMounted(async () => {
   try {
     const { data } = await getProblem(route.params.id)
     problem.value = data
+    favorited.value = Boolean(data.is_favorited)
     language.value = data.allowed_languages?.[0] || 'python'
     code.value = DEFAULT_TEMPLATE[language.value] || ''
     assistantStore.setProblem(data)
@@ -153,6 +173,23 @@ onBeforeUnmount(() => {
 
 function resetCode() {
   code.value = DEFAULT_TEMPLATE[language.value] || ''
+}
+
+async function toggleFav() {
+  if (!auth.isLoggedIn) {
+    ElMessage.warning('请先登录')
+    return
+  }
+  favLoading.value = true
+  try {
+    const { data } = await toggleFavorite(problem.value.id)
+    favorited.value = data.favorited
+    ElMessage.success(data.favorited ? '已加入收藏' : '已取消收藏')
+  } catch (e) {
+    ElMessage.error(e.message || '操作失败')
+  } finally {
+    favLoading.value = false
+  }
 }
 
 async function submit() {
@@ -205,6 +242,16 @@ async function pollStatus(id) {
 .problem-header .title {
   margin: 0 0 8px;
   font-size: 20px;
+}
+.title-row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+.title-row .title {
+  margin: 0 0 8px;
+  min-width: 0;
 }
 .meta {
   display: flex;

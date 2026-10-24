@@ -1,6 +1,6 @@
 from rest_framework import serializers
 
-from .models import Problem, Tag, TestCase
+from .models import Favorite, Problem, Tag, TestCase
 
 
 class TagSerializer(serializers.ModelSerializer):
@@ -41,13 +41,14 @@ class ProblemDetailSerializer(serializers.ModelSerializer):
     tags = TagSerializer(many=True, read_only=True)
     sample_cases = serializers.SerializerMethodField()
     reference_answer = serializers.SerializerMethodField()
+    is_favorited = serializers.SerializerMethodField()
 
     class Meta:
         model = Problem
         fields = [
             "id", "title", "description", "difficulty", "tags",
             "time_limit_ms", "memory_limit_kb", "allowed_languages",
-            "reference_answer", "is_public",
+            "reference_answer", "is_public", "is_favorited",
             "sample_cases", "created_at", "updated_at",
         ]
 
@@ -61,6 +62,13 @@ class ProblemDetailSerializer(serializers.ModelSerializer):
         if user is not None and getattr(user, "is_authenticated", False) and user.is_admin_role:
             return obj.reference_answer
         return None
+
+    def get_is_favorited(self, obj):
+        request = self.context.get("request")
+        user = getattr(request, "user", None)
+        if user is None or not getattr(user, "is_authenticated", False):
+            return False
+        return obj.favorites.filter(user_id=user.id).exists()
 
 
 class ProblemManageSerializer(serializers.ModelSerializer):
@@ -114,3 +122,14 @@ class ProblemManageListSerializer(serializers.ModelSerializer):
             "id", "title", "difficulty", "tags", "is_public",
             "time_limit_ms", "memory_limit_kb", "test_case_count", "updated_at",
         ]
+
+
+class FavoriteSerializer(serializers.ModelSerializer):
+    """收藏列表：内联题目摘要，便于前端直接渲染"""
+
+    problem = ProblemListSerializer(read_only=True)
+
+    class Meta:
+        model = Favorite
+        fields = ["id", "problem", "created_at"]
+        read_only_fields = ["id", "problem", "created_at"]

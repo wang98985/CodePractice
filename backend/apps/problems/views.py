@@ -4,6 +4,7 @@ from django.core.cache import cache
 from django.db.models import Count
 from django.shortcuts import get_object_or_404
 from rest_framework import mixins, permissions, viewsets
+from rest_framework.decorators import action
 from rest_framework.generics import ListAPIView
 from rest_framework.parsers import FormParser, JSONParser, MultiPartParser
 from rest_framework.response import Response
@@ -18,9 +19,10 @@ from .cache_utils import (
     problem_list_cache_key,
 )
 from .filters import ProblemFilterSet
-from .models import Problem, Tag, TestCase
+from .models import Favorite, Problem, Tag, TestCase
 from .pagination import ManagePagination
 from .serializers import (
+    FavoriteSerializer,
     ProblemDetailSerializer,
     ProblemListSerializer,
     ProblemManageListSerializer,
@@ -157,3 +159,37 @@ class TestCaseManageViewSet(viewsets.ModelViewSet):
     def perform_create(self, serializer):
         problem = get_object_or_404(Problem, pk=self.kwargs["problem_pk"])
         serializer.save(problem=problem)
+
+
+class FavoriteViewSet(mixins.ListModelMixin, mixins.DestroyModelMixin, viewsets.GenericViewSet):
+    """我的收藏：列表 / 取消收藏 / 收藏切换
+
+    - GET    /api/favorites/            收藏列表（内联题目摘要，按收藏时间倒序）
+    - DELETE /api/favorites/{id}/       取消收藏
+    - POST   /api/favorites/toggle/     body {problem_id} → {favorited: bool}
+    """
+
+    permission_classes = [permissions.IsAuthenticated]
+    serializer_class = FavoriteSerializer
+
+    def get_queryset(self):
+        return (
+            Favorite.objects.filter(user=self.request.user)
+            .select_related("problem")
+            .prefetch_related("problem__tags")
+        )
+
+    @action(detail=False, methods=["post"], url_path="toggle")
+    def toggle(self, request):
+        problem_id = request.data.get("problem_id")
+        if not problem_id:
+            return Response({"detail": "缺少 problem_id"}, status=400)
+        problem = Problem.objects.filter(pk=problem_id, is_public=True).first()
+        if problem is None:
+            return Response({"detail": "题目不存在"}, status=404)
+        favorite, created = Favorite.objects.get_or_create(
+            user=request.user, problem=problem
+        )
+        if not created:
+            favorite.delete()
+        return Response({"favorited": created})

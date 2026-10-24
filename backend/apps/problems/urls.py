@@ -2,6 +2,7 @@ from django.urls import include, path
 from rest_framework.routers import DefaultRouter
 
 from .views import (
+    FavoriteViewSet,
     ProblemBulkImportView,
     ProblemManageViewSet,
     ProblemViewSet,
@@ -12,6 +13,7 @@ from .views import (
 router = DefaultRouter()
 router.register("problems", ProblemViewSet, basename="problem")
 router.register("admin/problems", ProblemManageViewSet, basename="admin-problem")
+router.register("favorites", FavoriteViewSet, basename="favorite")
 
 problem_tc_list = TestCaseManageViewSet.as_view({"get": "list", "post": "create"})
 problem_tc_detail = TestCaseManageViewSet.as_view(

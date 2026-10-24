@@ -17,6 +17,7 @@ const routes = [
       { path: 'problems', component: () => import('@/views/problems/ProblemListView.vue') },
       { path: 'problems/:id', component: () => import('@/views/problems/ProblemDetailView.vue') },
       { path: 'leaderboard', component: () => import('@/views/leaderboard/LeaderboardView.vue') },
+      { path: 'favorites', component: () => import('@/views/favorites/FavoritesView.vue') },
       { path: 'profile', component: () => import('@/views/profile/ProfileView.vue') },
       { path: 'users/:id', component: () => import('@/views/profile/ProfileView.vue') },
       { path: 'submissions', component: () => import('@/views/submissions/SubmissionListView.vue') },
