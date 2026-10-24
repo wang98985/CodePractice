@@ -36,6 +36,8 @@ class Submission(models.Model):
         indexes = [
             models.Index(fields=["user", "-created_at"]),
             models.Index(fields=["problem", "-created_at"]),
+            # 排行榜按用户聚合，覆盖 (user, status) 过滤与计数
+            models.Index(fields=["user", "status"]),
         ]
 
     def __str__(self):

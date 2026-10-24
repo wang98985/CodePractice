@@ -1,8 +1,12 @@
+from django.urls import path
 from rest_framework.routers import DefaultRouter
 
-from .views import SubmissionViewSet
+from .views import LeaderboardView, SubmissionViewSet
 
 router = DefaultRouter()
 router.register("submissions", SubmissionViewSet, basename="submission")
 
-urlpatterns = router.urls
+urlpatterns = [
+    path("leaderboard/", LeaderboardView.as_view(), name="leaderboard"),
+    *router.urls,
+]
