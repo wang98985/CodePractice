@@ -50,6 +50,7 @@ INSTALLED_APPS = [
     "apps.judge",
     "apps.assistant",
     "apps.notifications",
+    "apps.achievements",
 ]
 
 MIDDLEWARE = [

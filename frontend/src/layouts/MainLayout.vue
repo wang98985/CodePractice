@@ -55,6 +55,7 @@
           <template #dropdown>
             <el-dropdown-menu>
               <el-dropdown-item command="profile">个人主页</el-dropdown-item>
+              <el-dropdown-item command="achievements">成就徽章</el-dropdown-item>
               <el-dropdown-item command="submissions">我的提交</el-dropdown-item>
               <el-dropdown-item divided command="logout">退出登录</el-dropdown-item>
             </el-dropdown-menu>
@@ -88,6 +89,7 @@
       <el-menu-item index="/leaderboard">排行榜</el-menu-item>
       <el-menu-item index="/favorites">收藏夹</el-menu-item>
       <el-menu-item index="/notifications">通知中心</el-menu-item>
+      <el-menu-item index="/achievements">成就徽章</el-menu-item>
       <el-menu-item index="/submissions">我的提交</el-menu-item>
       <template v-if="auth.isAdmin">
         <el-menu-item index="/admin/problems">题目管理</el-menu-item>
@@ -168,6 +170,8 @@ function handleCommand(cmd) {
     router.push('/login')
   } else if (cmd === 'profile') {
     router.push('/profile')
+  } else if (cmd === 'achievements') {
+    router.push('/achievements')
   } else if (cmd === 'submissions') {
     router.push('/submissions')
   }

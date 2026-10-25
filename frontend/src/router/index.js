@@ -23,6 +23,7 @@ const routes = [
       { path: 'leaderboard', component: () => import('@/views/leaderboard/LeaderboardView.vue') },
       { path: 'favorites', component: () => import('@/views/favorites/FavoritesView.vue') },
       { path: 'notifications', component: () => import('@/views/notifications/NotificationListView.vue') },
+      { path: 'achievements', component: () => import('@/views/achievements/AchievementListView.vue') },
       { path: 'profile', component: () => import('@/views/profile/ProfileView.vue') },
       { path: 'users/:id', component: () => import('@/views/profile/ProfileView.vue') },
       { path: 'submissions', component: () => import('@/views/submissions/SubmissionListView.vue') },
