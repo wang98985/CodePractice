@@ -88,9 +88,6 @@ async function load(p = 1) {
     const { data } = await listNotifications(params)
     rows.value = data.results
     total.value = data.count
-    if (!filter.value || filter.value === 'all') {
-      unreadCount.value = data.results.filter((n) => !n.is_read).length
-    }
     if (!data.results.length && p > 1) {
       await load(p - 1)
     }
