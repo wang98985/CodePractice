@@ -2,6 +2,7 @@ from django.urls import include, path
 from rest_framework.routers import DefaultRouter
 
 from .views import (
+    DailyProblemView,
     FavoriteViewSet,
     ProblemBulkImportView,
     ProblemManageViewSet,
@@ -22,6 +23,7 @@ problem_tc_detail = TestCaseManageViewSet.as_view(
 
 urlpatterns = [
     path("tags/", TagListView.as_view(), name="tag-list"),
+    path("daily/", DailyProblemView.as_view(), name="daily-problem"),
     # 必须在 router 之前注册，避免被 problems/<pk>/ 详情路由吞掉
     path("problems/admin/bulk-upload/", ProblemBulkImportView.as_view(), name="problem-bulk-import"),
     path(

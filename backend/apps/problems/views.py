@@ -1,8 +1,10 @@
 import json
+from datetime import timedelta
 
 from django.core.cache import cache
-from django.db.models import Count
+from django.db.models import Count, Q
 from django.shortcuts import get_object_or_404
+from django.utils import timezone
 from rest_framework import mixins, permissions, viewsets
 from rest_framework.decorators import action
 from rest_framework.generics import ListAPIView
@@ -11,6 +13,8 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from apps.accounts.permissions import IsAdminRole, IsSuperAdminRole
+from apps.judge.verdicts import Verdict
+from apps.submissions.models import Submission
 
 from .bulk_import import decode_uploaded, import_problems
 from .cache_utils import (
@@ -19,9 +23,10 @@ from .cache_utils import (
     problem_list_cache_key,
 )
 from .filters import ProblemFilterSet
-from .models import Favorite, Problem, Tag, TestCase
+from .models import DailyProblem, Favorite, Problem, Tag, TestCase
 from .pagination import ManagePagination
 from .serializers import (
+    DailyProblemSerializer,
     FavoriteSerializer,
     ProblemDetailSerializer,
     ProblemListSerializer,
@@ -193,3 +198,78 @@ class FavoriteViewSet(mixins.ListModelMixin, mixins.DestroyModelMixin, viewsets.
         if not created:
             favorite.delete()
         return Response({"favorited": created})
+
+
+def _pick_daily_problem(date):
+    """按日期确定性选取公开题目，保证同一天所有用户看到同一道题。"""
+    ids = list(
+        Problem.objects.filter(is_public=True).order_by("id").values_list("id", flat=True)
+    )
+    if not ids:
+        return None
+    return Problem.objects.get(pk=ids[date.toordinal() % len(ids)])
+
+
+def _get_daily(date):
+    record = DailyProblem.objects.filter(date=date).select_related("problem").first()
+    if record is not None:
+        return record
+    problem = _pick_daily_problem(date)
+    if problem is None:
+        return None
+    # 并发首次访问时唯一约束兜底：抢输的一方复用已有记录
+    record, _ = DailyProblem.objects.get_or_create(date=date, defaults={"problem": problem})
+    return record
+
+
+class DailyProblemView(APIView):
+    """每日一题
+
+    GET /api/daily/ →
+    {
+      "today": {date, problem, submitted, accepted} | null,
+      "recent": [{date, problem, accepted}]   # 最近 6 天（不含今天）
+    }
+    """
+
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request):
+        today = timezone.localdate()
+        today_record = _get_daily(today)
+
+        if today_record is None:
+            return Response({"today": None, "recent": []})
+
+        problem = today_record.problem
+        # 不按 created_at 日期过滤：MySQL 时区转换不可靠，改用「是否做过这道题」
+        stats = Submission.objects.filter(
+            user=request.user, problem=problem
+        ).aggregate(
+            submitted=Count("id"),
+            accepted=Count("id", filter=Q(status=Verdict.ACCEPTED)),
+        )
+
+        today_data = DailyProblemSerializer(today_record).data
+        today_data["submitted"] = stats["submitted"] > 0
+        today_data["accepted"] = stats["accepted"] > 0
+
+        records = [
+            record
+            for record in (_get_daily(today - timedelta(days=offset)) for offset in range(1, 7))
+            if record is not None
+        ]
+        accepted_ids = set(
+            Submission.objects.filter(
+                user=request.user,
+                problem_id__in=[record.problem_id for record in records],
+                status=Verdict.ACCEPTED,
+            ).values_list("problem_id", flat=True)
+        )
+        recent = []
+        for record in records:
+            row = DailyProblemSerializer(record).data
+            row["accepted"] = record.problem_id in accepted_ids
+            recent.append(row)
+
+        return Response({"today": today_data, "recent": recent})

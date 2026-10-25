@@ -101,3 +101,22 @@ class Favorite(models.Model):
 
     def __str__(self):
         return f"Favorite#{self.pk} user={self.user_id} problem={self.problem_id}"
+
+
+class DailyProblem(models.Model):
+    """每日一题：每天固定一道公开题目，按日期唯一"""
+
+    date = models.DateField("日期", unique=True)
+    problem = models.ForeignKey(
+        Problem, on_delete=models.CASCADE,
+        related_name="daily_records", verbose_name="题目",
+    )
+    created_at = models.DateTimeField("创建时间", auto_now_add=True)
+
+    class Meta:
+        verbose_name = "每日一题"
+        verbose_name_plural = "每日一题"
+        ordering = ["-date"]
+
+    def __str__(self):
+        return f"{self.date} -> Problem#{self.problem_id}"

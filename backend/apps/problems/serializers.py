@@ -1,6 +1,6 @@
 from rest_framework import serializers
 
-from .models import Favorite, Problem, Tag, TestCase
+from .models import DailyProblem, Favorite, Problem, Tag, TestCase
 
 
 class TagSerializer(serializers.ModelSerializer):
@@ -133,3 +133,13 @@ class FavoriteSerializer(serializers.ModelSerializer):
         model = Favorite
         fields = ["id", "problem", "created_at"]
         read_only_fields = ["id", "problem", "created_at"]
+
+
+class DailyProblemSerializer(serializers.ModelSerializer):
+    """每日一题：只暴露题目摘要，题面走详情接口"""
+
+    problem = ProblemListSerializer(read_only=True)
+
+    class Meta:
+        model = DailyProblem
+        fields = ["date", "problem"]
