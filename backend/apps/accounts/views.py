@@ -18,6 +18,7 @@ from rest_framework_simplejwt.views import TokenObtainPairView
 from apps.problems.models import Problem
 from apps.submissions.models import Submission
 from apps.judge.verdicts import Verdict
+from apps.notifications.models import Notification
 
 from .models import EmailCode, User
 from .permissions import IsAdminRole, IsSuperAdminRole
@@ -157,6 +158,27 @@ class AdminUserViewSet(
     def get_queryset(self):
         return User.objects.filter(role=User.Role.USER).order_by("-date_joined")
 
+    def update(self, request, *args, **kwargs):
+        """普通用户信息变更：改密码 / 禁用启用时给该用户发系统通知"""
+        user = self.get_object()
+        old_active = user.is_active
+        password_changed = bool(request.data.get("password"))
+        response = super().update(request, *args, **kwargs)
+        user.refresh_from_db()
+        if password_changed:
+            Notification.notify(
+                user,
+                title="密码已被管理员重置",
+                content="你的登录密码已被管理员重置，请尽快使用新密码登录并妥善保管。",
+            )
+        if old_active and not user.is_active:
+            Notification.notify(
+                user,
+                title="账号已被禁用",
+                content="你的账号已被管理员禁用，如有疑问请联系平台管理员。",
+            )
+        return response
+
     @action(detail=True, methods=["patch"], permission_classes=[IsSuperAdminRole], url_path="set-role")
     def set_role(self, request, pk=None):
         """超管修改用户角色（含把管理员降为普通用户）。
@@ -181,6 +203,11 @@ class AdminUserViewSet(
             user.is_staff = False
             update_fields.append("is_staff")
         user.save(update_fields=update_fields)
+        Notification.notify(
+            user,
+            title="你的账号角色已变更",
+            content=f"当前角色：{'管理员' if role == User.Role.ADMIN else '普通用户'}。",
+        )
         return Response(UserManageSerializer(user).data)
 
 
@@ -210,6 +237,11 @@ class AdminViewSet(
             return Response({"detail": "密码至少 6 位"}, status=status.HTTP_400_BAD_REQUEST)
         user.set_password(password)
         user.save(update_fields=["password"])
+        Notification.notify(
+            user,
+            title="密码已被超级管理员重置",
+            content="你的登录密码已被超级管理员重置，请尽快使用新密码登录并妥善保管。",
+        )
         return Response({"detail": "密码已重置"})
 
 

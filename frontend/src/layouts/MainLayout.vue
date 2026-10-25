@@ -34,6 +34,18 @@
           </template>
         </el-menu>
 
+        <el-badge
+          v-if="auth.isLoggedIn"
+          :value="unreadCount"
+          :hidden="!unreadCount"
+          :max="99"
+          class="bell-badge"
+        >
+          <el-button text class="bell-btn" aria-label="通知中心" @click="$router.push('/notifications')">
+            <el-icon :size="20"><Bell /></el-icon>
+          </el-button>
+        </el-badge>
+
         <el-dropdown v-if="auth.isLoggedIn" trigger="click" @command="handleCommand">
           <span class="user-info">
             <UserAvatar :name="displayName" :size="30" />
@@ -75,6 +87,7 @@
       <el-menu-item index="/problem-sets">题单</el-menu-item>
       <el-menu-item index="/leaderboard">排行榜</el-menu-item>
       <el-menu-item index="/favorites">收藏夹</el-menu-item>
+      <el-menu-item index="/notifications">通知中心</el-menu-item>
       <el-menu-item index="/submissions">我的提交</el-menu-item>
       <template v-if="auth.isAdmin">
         <el-menu-item index="/admin/problems">题目管理</el-menu-item>
@@ -93,9 +106,10 @@
 </template>
 
 <script setup>
-import { computed, ref, watch } from 'vue'
+import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { Menu } from '@element-plus/icons-vue'
+import { Bell, Menu } from '@element-plus/icons-vue'
+import { getUnreadCount } from '@/api/notifications'
 import { useAuthStore } from '@/stores/auth'
 import { useAssistantStore } from '@/stores/assistant'
 import AssistantChat from '@/components/AssistantChat.vue'
@@ -107,6 +121,8 @@ const route = useRoute()
 const router = useRouter()
 
 const drawerOpen = ref(false)
+const unreadCount = ref(0)
+let unreadTimer = null
 const activeMenu = computed(() => '/' + route.path.split('/')[1])
 const displayName = computed(() => auth.user?.nickname || auth.user?.email || '')
 const roleText = computed(
@@ -122,8 +138,29 @@ watch(
   (path) => {
     drawerOpen.value = false
     if (!path.startsWith('/problems/')) assistantStore.clearProblem()
+    refreshUnread()
   }
 )
+
+async function refreshUnread() {
+  if (!auth.isLoggedIn) {
+    unreadCount.value = 0
+    return
+  }
+  try {
+    const { data } = await getUnreadCount()
+    unreadCount.value = data.count
+  } catch {
+    /* 未读数失败静默，不打扰浏览 */
+  }
+}
+
+onMounted(() => {
+  refreshUnread()
+  unreadTimer = setInterval(refreshUnread, 60000)
+})
+
+onBeforeUnmount(() => clearInterval(unreadTimer))
 
 function handleCommand(cmd) {
   if (cmd === 'logout') {
@@ -199,6 +236,13 @@ function handleCommand(cmd) {
   cursor: pointer;
   outline: none;
   padding-left: 8px;
+}
+.bell-badge {
+  margin-right: 6px;
+}
+.bell-btn {
+  padding: 6px;
+  color: var(--c-text-regular);
 }
 .user-name {
   font-weight: 500;

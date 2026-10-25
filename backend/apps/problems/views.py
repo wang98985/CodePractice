@@ -16,6 +16,7 @@ from rest_framework.views import APIView
 
 from apps.accounts.permissions import IsAdminRole, IsSuperAdminRole
 from apps.judge.verdicts import Verdict
+from apps.notifications.models import Notification
 from apps.submissions.models import Submission
 
 from .bulk_import import decode_uploaded, import_problems
@@ -510,6 +511,15 @@ class DiscussionReplyView(APIView):
         reply = DiscussionReply.objects.create(
             discussion=discussion, author=request.user, **serializer.validated_data
         )
+        if discussion.author_id != request.user.id:
+            actor = request.user.nickname or "有人"
+            Notification.notify(
+                discussion.author,
+                title=f"{actor}回复了你的讨论「{discussion.title}」",
+                content=reply.content[:200],
+                link=f"/discussions/{discussion.id}",
+                kind=Notification.Kind.DISCUSSION_REPLY,
+            )
         return Response(DiscussionReplySerializer(reply).data, status=201)
 
 
