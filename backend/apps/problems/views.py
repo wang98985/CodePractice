@@ -6,8 +6,9 @@ from django.core.cache import cache
 from django.db.models import Count, Max, Q
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
-from rest_framework import mixins, permissions, viewsets
+from rest_framework import mixins, pagination, permissions, viewsets
 from rest_framework.decorators import action
+from rest_framework.exceptions import PermissionDenied
 from rest_framework.generics import ListAPIView
 from rest_framework.parsers import FormParser, JSONParser, MultiPartParser
 from rest_framework.response import Response
@@ -24,10 +25,25 @@ from .cache_utils import (
     problem_list_cache_key,
 )
 from .filters import ProblemFilterSet
-from .models import DailyProblem, Favorite, Problem, ProblemSet, ProblemSetItem, Tag, TestCase
+from .models import (
+    DailyProblem,
+    Discussion,
+    DiscussionReply,
+    Favorite,
+    Problem,
+    ProblemSet,
+    ProblemSetItem,
+    Tag,
+    TestCase,
+)
 from .pagination import ManagePagination
 from .serializers import (
     DailyProblemSerializer,
+    DiscussionCreateSerializer,
+    DiscussionDetailSerializer,
+    DiscussionListSerializer,
+    DiscussionReplyCreateSerializer,
+    DiscussionReplySerializer,
     FavoriteSerializer,
     ProblemDetailSerializer,
     ProblemListSerializer,
@@ -404,4 +420,107 @@ class ProblemSetViewSet(viewsets.ModelViewSet):
         item = get_object_or_404(ProblemSetItem, pk=item_id, problem_set=problem_set)
         item.delete()
         problem_set.save(update_fields=["updated_at"])
+        return Response(status=204)
+
+
+class DiscussionPagination(pagination.PageNumberPagination):
+    page_size = 20
+    page_size_query_param = "page_size"
+    max_page_size = 100
+
+
+class ProblemDiscussionView(APIView):
+    """某道题下的讨论 / 题解
+
+    - GET  /api/problems/{problem_id}/discussions/?kind=solution|discussion
+    - POST /api/problems/{problem_id}/discussions/  body {title, content, is_solution}
+    """
+
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request, problem_id):
+        problem = get_object_or_404(Problem, pk=problem_id, is_public=True)
+        queryset = (
+            Discussion.objects.filter(problem=problem)
+            .select_related("author", "problem")
+            .annotate(reply_count=Count("replies"))
+            .order_by("-created_at")
+        )
+        kind = request.query_params.get("kind")
+        if kind == "solution":
+            queryset = queryset.filter(is_solution=True)
+        elif kind == "discussion":
+            queryset = queryset.filter(is_solution=False)
+        paginator = DiscussionPagination()
+        page = paginator.paginate_queryset(queryset, request, view=self)
+        return paginator.get_paginated_response(
+            DiscussionListSerializer(page, many=True).data
+        )
+
+    def post(self, request, problem_id):
+        problem = get_object_or_404(Problem, pk=problem_id, is_public=True)
+        serializer = DiscussionCreateSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        discussion = Discussion.objects.create(
+            problem=problem, author=request.user, **serializer.validated_data
+        )
+        return Response(DiscussionDetailSerializer(discussion).data, status=201)
+
+
+class DiscussionDetailView(APIView):
+    """讨论详情（含回复）/ 删除"""
+
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get_object(self, pk):
+        return get_object_or_404(
+            Discussion.objects.select_related("problem", "author").prefetch_related(
+                "replies__author"
+            ),
+            pk=pk,
+        )
+
+    def get(self, request, pk):
+        discussion = self.get_object(pk)
+        if not discussion.problem.is_public and not request.user.is_admin_role:
+            raise PermissionDenied("无权查看该讨论")
+        return Response(DiscussionDetailSerializer(discussion).data)
+
+    def delete(self, request, pk):
+        discussion = self.get_object(pk)
+        if discussion.author_id != request.user.id and not request.user.is_admin_role:
+            raise PermissionDenied("只能删除自己的讨论")
+        discussion.delete()
+        return Response(status=204)
+
+
+class DiscussionReplyView(APIView):
+    """在讨论下回复"""
+
+    permission_classes = [permissions.IsAuthenticated]
+
+    def post(self, request, pk):
+        discussion = get_object_or_404(
+            Discussion.objects.select_related("problem"), pk=pk
+        )
+        if not discussion.problem.is_public and not request.user.is_admin_role:
+            raise PermissionDenied("无权回复该讨论")
+        serializer = DiscussionReplyCreateSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        reply = DiscussionReply.objects.create(
+            discussion=discussion, author=request.user, **serializer.validated_data
+        )
+        return Response(DiscussionReplySerializer(reply).data, status=201)
+
+
+class DiscussionReplyDetailView(APIView):
+    """删除回复（作者本人或管理员）"""
+
+    permission_classes = [permissions.IsAuthenticated]
+
+    def delete(self, request, pk):
+        reply = get_object_or_404(DiscussionReply, pk=pk)
+        if reply.author_id != request.user.id and not request.user.is_admin_role:
+            raise PermissionDenied("只能删除自己的回复")
+        reply.delete()
         return Response(status=204)

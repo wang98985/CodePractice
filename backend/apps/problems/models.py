@@ -169,3 +169,52 @@ class ProblemSetItem(models.Model):
 
     def __str__(self):
         return f"Item#{self.pk} set={self.problem_set_id} problem={self.problem_id}"
+
+
+class Discussion(models.Model):
+    """题目讨论 / 题解"""
+
+    problem = models.ForeignKey(
+        Problem, on_delete=models.CASCADE,
+        related_name="discussions", verbose_name="题目",
+    )
+    author = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.CASCADE,
+        related_name="discussions", verbose_name="作者",
+    )
+    title = models.CharField("标题", max_length=150)
+    content = models.TextField("内容(Markdown)")
+    is_solution = models.BooleanField("是否题解", default=False, db_index=True)
+    created_at = models.DateTimeField("创建时间", auto_now_add=True)
+    updated_at = models.DateTimeField("更新时间", auto_now=True)
+
+    class Meta:
+        verbose_name = "讨论"
+        verbose_name_plural = "讨论"
+        ordering = ["-created_at"]
+
+    def __str__(self):
+        return f"Discussion#{self.pk} {self.title}"
+
+
+class DiscussionReply(models.Model):
+    """讨论回复"""
+
+    discussion = models.ForeignKey(
+        Discussion, on_delete=models.CASCADE,
+        related_name="replies", verbose_name="讨论",
+    )
+    author = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.CASCADE,
+        related_name="discussion_replies", verbose_name="作者",
+    )
+    content = models.TextField("内容(Markdown)")
+    created_at = models.DateTimeField("创建时间", auto_now_add=True)
+
+    class Meta:
+        verbose_name = "讨论回复"
+        verbose_name_plural = "讨论回复"
+        ordering = ["created_at"]
+
+    def __str__(self):
+        return f"Reply#{self.pk} discussion={self.discussion_id}"

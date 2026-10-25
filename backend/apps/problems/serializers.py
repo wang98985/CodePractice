@@ -2,6 +2,8 @@ from rest_framework import serializers
 
 from .models import (
     DailyProblem,
+    Discussion,
+    DiscussionReply,
     Favorite,
     Problem,
     ProblemSet,
@@ -192,3 +194,78 @@ class ProblemSetDetailSerializer(ProblemSetSerializer):
 
     class Meta(ProblemSetSerializer.Meta):
         fields = ProblemSetSerializer.Meta.fields + ["items"]
+
+
+class DiscussionListSerializer(serializers.ModelSerializer):
+    """讨论列表：作者昵称 + 回复数"""
+
+    author_nickname = serializers.SerializerMethodField()
+    reply_count = serializers.SerializerMethodField()
+    problem_title = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Discussion
+        fields = [
+            "id", "problem_id", "problem_title", "title", "is_solution",
+            "author_id", "author_nickname", "reply_count", "created_at",
+        ]
+
+    def get_author_nickname(self, obj):
+        return obj.author.nickname or f"用户{obj.author_id}"
+
+    def get_problem_title(self, obj):
+        return obj.problem.title
+
+    def get_reply_count(self, obj):
+        annotated = getattr(obj, "reply_count", None)
+        if isinstance(annotated, int):
+            return annotated
+        return obj.replies.count()
+
+
+class DiscussionCreateSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Discussion
+        fields = ["title", "content", "is_solution"]
+
+    def validate_title(self, value):
+        if not value.strip():
+            raise serializers.ValidationError("标题不能为空")
+        return value.strip()
+
+    def validate_content(self, value):
+        if not value.strip():
+            raise serializers.ValidationError("内容不能为空")
+        return value
+
+
+class DiscussionReplySerializer(serializers.ModelSerializer):
+    author_nickname = serializers.SerializerMethodField()
+
+    class Meta:
+        model = DiscussionReply
+        fields = ["id", "discussion_id", "author_id", "author_nickname", "content", "created_at"]
+
+    def get_author_nickname(self, obj):
+        return obj.author.nickname or f"用户{obj.author_id}"
+
+
+class DiscussionReplyCreateSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = DiscussionReply
+        fields = ["content"]
+
+    def validate_content(self, value):
+        if not value.strip():
+            raise serializers.ValidationError("回复内容不能为空")
+        return value
+
+
+class DiscussionDetailSerializer(DiscussionListSerializer):
+    replies = serializers.SerializerMethodField()
+
+    class Meta(DiscussionListSerializer.Meta):
+        fields = DiscussionListSerializer.Meta.fields + ["content", "updated_at", "replies"]
+
+    def get_replies(self, obj):
+        return DiscussionReplySerializer(obj.replies.all(), many=True).data

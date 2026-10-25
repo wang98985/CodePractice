@@ -65,6 +65,80 @@
             </el-collapse>
           </div>
         </el-card>
+
+        <!-- 讨论 / 题解 -->
+        <el-card shadow="never" class="discussion-card">
+          <div class="discussion-head">
+            <span class="discussion-title">讨论与题解</span>
+            <el-button size="small" type="primary" plain @click="openPost">发起讨论</el-button>
+          </div>
+
+          <el-tabs v-model="kind" @tab-change="loadDiscussions(1)">
+            <el-tab-pane label="全部" name="all" />
+            <el-tab-pane label="题解" name="solution" />
+            <el-tab-pane label="讨论" name="discussion" />
+          </el-tabs>
+
+          <div v-loading="discLoading" class="discussion-list">
+            <div
+              v-for="d in discussions"
+              :key="d.id"
+              class="discussion-item"
+              @click="$router.push(`/discussions/${d.id}`)"
+            >
+              <div class="discussion-item__head">
+                <el-tag v-if="d.is_solution" type="success" effect="plain" size="small">题解</el-tag>
+                <span class="discussion-item__title">{{ d.title }}</span>
+              </div>
+              <div class="discussion-item__meta">
+                <span>{{ d.author_nickname }}</span>
+                <span>· {{ formatTime(d.created_at) }}</span>
+                <span>· {{ d.reply_count }} 回复</span>
+              </div>
+            </div>
+            <p v-if="!discLoading && !discussions.length" class="text-muted discussion-empty">
+              还没有讨论，来发第一篇题解吧
+            </p>
+          </div>
+
+          <el-pagination
+            v-if="discTotal > discPageSize"
+            small
+            layout="prev, pager, next"
+            :total="discTotal"
+            :page-size="discPageSize"
+            :current-page="discPage"
+            @current-change="loadDiscussions"
+          />
+        </el-card>
+
+        <el-dialog v-model="postVisible" title="发起讨论" width="560px" append-to-body>
+          <el-form label-position="top">
+            <el-form-item label="标题">
+              <el-input v-model="postForm.title" maxlength="150" show-word-limit placeholder="一句话说明主题" />
+            </el-form-item>
+            <el-form-item label="类型">
+              <el-radio-group v-model="postForm.is_solution">
+                <el-radio :value="false">讨论</el-radio>
+                <el-radio :value="true">题解</el-radio>
+              </el-radio-group>
+            </el-form-item>
+            <el-form-item label="内容（支持 Markdown）">
+              <el-input
+                v-model="postForm.content"
+                type="textarea"
+                :rows="8"
+                maxlength="20000"
+                show-word-limit
+                placeholder="分享思路、复杂度分析或踩坑经验"
+              />
+            </el-form-item>
+          </el-form>
+          <template #footer>
+            <el-button @click="postVisible = false">取消</el-button>
+            <el-button type="primary" :loading="posting" @click="submitPost">发表</el-button>
+          </template>
+        </el-dialog>
       </el-col>
 
       <!-- 右侧：提交面板 -->
@@ -116,11 +190,12 @@
 
 <script setup>
 import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
-import { useRoute } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { Star, StarFilled } from '@element-plus/icons-vue'
 import { getProblem } from '@/api/problems'
 import { toggleFavorite } from '@/api/favorites'
+import { createDiscussion, listDiscussions } from '@/api/discussions'
 import { createSubmission, getSubmissionStatus } from '@/api/submissions'
 import { useAuthStore } from '@/stores/auth'
 import { useAssistantStore } from '@/stores/assistant'
@@ -135,6 +210,7 @@ const DEFAULT_TEMPLATE = {
 }
 
 const route = useRoute()
+const router = useRouter()
 const auth = useAuthStore()
 const assistantStore = useAssistantStore()
 
@@ -149,7 +225,70 @@ const favorited = ref(false)
 const favLoading = ref(false)
 let pollTimer = null
 
+// 讨论 / 题解
+const kind = ref('all')
+const discussions = ref([])
+const discTotal = ref(0)
+const discPage = ref(1)
+const discPageSize = ref(10)
+const discLoading = ref(false)
+const postVisible = ref(false)
+const posting = ref(false)
+const postForm = ref({ title: '', content: '', is_solution: false })
+
 const langText = computed(() => language.value)
+
+function formatTime(t) {
+  return t ? new Date(t).toLocaleString('zh-CN', { hour12: false }) : '-'
+}
+
+async function loadDiscussions(page = 1) {
+  if (!problem.value.id) return
+  discPage.value = page
+  discLoading.value = true
+  try {
+    const params = { page, page_size: discPageSize.value }
+    if (kind.value !== 'all') params.kind = kind.value
+    const { data } = await listDiscussions(problem.value.id, params)
+    discussions.value = data.results
+    discTotal.value = data.count
+  } catch (e) {
+    ElMessage.error(e.message || '讨论加载失败')
+  } finally {
+    discLoading.value = false
+  }
+}
+
+function openPost() {
+  if (!auth.isLoggedIn) {
+    ElMessage.warning('请先登录')
+    return
+  }
+  postForm.value = { title: '', content: '', is_solution: false }
+  postVisible.value = true
+}
+
+async function submitPost() {
+  if (!postForm.value.title.trim() || !postForm.value.content.trim()) {
+    ElMessage.warning('标题和内容都不能为空')
+    return
+  }
+  posting.value = true
+  try {
+    const { data } = await createDiscussion(problem.value.id, {
+      title: postForm.value.title.trim(),
+      content: postForm.value.content,
+      is_solution: postForm.value.is_solution,
+    })
+    postVisible.value = false
+    ElMessage.success('发表成功')
+    router.push(`/discussions/${data.id}`)
+  } catch (e) {
+    ElMessage.error(e.message || '发表失败')
+  } finally {
+    posting.value = false
+  }
+}
 
 onMounted(async () => {
   try {
@@ -159,6 +298,7 @@ onMounted(async () => {
     language.value = data.allowed_languages?.[0] || 'python'
     code.value = DEFAULT_TEMPLATE[language.value] || ''
     assistantStore.setProblem(data)
+    loadDiscussions(1)
   } catch (e) {
     ElMessage.error(e.message || '题目加载失败')
   } finally {
@@ -312,5 +452,50 @@ async function pollStatus(id) {
   display: flex;
   gap: 8px;
   align-items: center;
+}
+.discussion-card {
+  margin-bottom: 16px;
+}
+.discussion-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 4px;
+}
+.discussion-title {
+  font-weight: 600;
+  font-size: 15px;
+}
+.discussion-item {
+  padding: 10px 0;
+  border-top: 1px solid var(--c-border-light);
+  cursor: pointer;
+}
+.discussion-item:hover .discussion-item__title {
+  color: var(--brand-500);
+}
+.discussion-item__head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+.discussion-item__title {
+  font-size: 14px;
+  color: var(--c-text-primary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.discussion-item__meta {
+  display: flex;
+  gap: 6px;
+  margin-top: 4px;
+  font-size: 12px;
+  color: var(--c-text-secondary);
+}
+.discussion-empty {
+  font-size: 13px;
+  padding: 12px 0 4px;
 }
 </style>

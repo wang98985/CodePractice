@@ -3,8 +3,12 @@ from rest_framework.routers import DefaultRouter
 
 from .views import (
     DailyProblemView,
+    DiscussionDetailView,
+    DiscussionReplyDetailView,
+    DiscussionReplyView,
     FavoriteViewSet,
     ProblemBulkImportView,
+    ProblemDiscussionView,
     ProblemManageViewSet,
     ProblemSetViewSet,
     ProblemViewSet,
@@ -26,6 +30,22 @@ problem_tc_detail = TestCaseManageViewSet.as_view(
 urlpatterns = [
     path("tags/", TagListView.as_view(), name="tag-list"),
     path("daily/", DailyProblemView.as_view(), name="daily-problem"),
+    path(
+        "problems/<int:problem_id>/discussions/",
+        ProblemDiscussionView.as_view(),
+        name="problem-discussions",
+    ),
+    path("discussions/<int:pk>/", DiscussionDetailView.as_view(), name="discussion-detail"),
+    path(
+        "discussions/<int:pk>/replies/",
+        DiscussionReplyView.as_view(),
+        name="discussion-replies",
+    ),
+    path(
+        "discussion-replies/<int:pk>/",
+        DiscussionReplyDetailView.as_view(),
+        name="discussion-reply-detail",
+    ),
     # 必须在 router 之前注册，避免被 problems/<pk>/ 详情路由吞掉
     path("problems/admin/bulk-upload/", ProblemBulkImportView.as_view(), name="problem-bulk-import"),
     path(

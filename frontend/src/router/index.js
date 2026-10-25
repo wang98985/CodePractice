@@ -16,6 +16,7 @@ const routes = [
       { path: '', redirect: '/problems' },
       { path: 'problems', component: () => import('@/views/problems/ProblemListView.vue') },
       { path: 'problems/:id', component: () => import('@/views/problems/ProblemDetailView.vue') },
+      { path: 'discussions/:id', component: () => import('@/views/discussions/DiscussionDetailView.vue') },
       { path: 'daily', component: () => import('@/views/daily/DailyProblemView.vue') },
       { path: 'problem-sets', component: () => import('@/views/problemSets/ProblemSetListView.vue') },
       { path: 'problem-sets/:id', component: () => import('@/views/problemSets/ProblemSetDetailView.vue') },
