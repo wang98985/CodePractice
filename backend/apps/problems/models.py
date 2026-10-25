@@ -120,3 +120,52 @@ class DailyProblem(models.Model):
 
     def __str__(self):
         return f"{self.date} -> Problem#{self.problem_id}"
+
+
+class ProblemSet(models.Model):
+    """用户自建题单（仅本人可见）"""
+
+    owner = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.CASCADE,
+        related_name="problem_sets", verbose_name="创建者",
+    )
+    title = models.CharField("题单名称", max_length=100)
+    description = models.CharField("描述", max_length=500, blank=True, default="")
+    created_at = models.DateTimeField("创建时间", auto_now_add=True)
+    updated_at = models.DateTimeField("更新时间", auto_now=True)
+
+    class Meta:
+        verbose_name = "题单"
+        verbose_name_plural = "题单"
+        ordering = ["-updated_at"]
+
+    def __str__(self):
+        return f"ProblemSet#{self.pk} {self.title}"
+
+
+class ProblemSetItem(models.Model):
+    """题单内的题目，同一题单内题目不重复"""
+
+    problem_set = models.ForeignKey(
+        ProblemSet, on_delete=models.CASCADE,
+        related_name="items", verbose_name="题单",
+    )
+    problem = models.ForeignKey(
+        Problem, on_delete=models.CASCADE,
+        related_name="set_items", verbose_name="题目",
+    )
+    order = models.PositiveIntegerField("顺序", default=0)
+    created_at = models.DateTimeField("添加时间", auto_now_add=True)
+
+    class Meta:
+        verbose_name = "题单题目"
+        verbose_name_plural = "题单题目"
+        ordering = ["order", "id"]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["problem_set", "problem"], name="uniq_set_problem"
+            )
+        ]
+
+    def __str__(self):
+        return f"Item#{self.pk} set={self.problem_set_id} problem={self.problem_id}"

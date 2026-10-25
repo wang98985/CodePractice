@@ -1,6 +1,14 @@
 from rest_framework import serializers
 
-from .models import DailyProblem, Favorite, Problem, Tag, TestCase
+from .models import (
+    DailyProblem,
+    Favorite,
+    Problem,
+    ProblemSet,
+    ProblemSetItem,
+    Tag,
+    TestCase,
+)
 
 
 class TagSerializer(serializers.ModelSerializer):
@@ -143,3 +151,44 @@ class DailyProblemSerializer(serializers.ModelSerializer):
     class Meta:
         model = DailyProblem
         fields = ["date", "problem"]
+
+
+class ProblemSetSerializer(serializers.ModelSerializer):
+    """题单列表：附带题目数与已通过数（solved 由视图注入 context）"""
+
+    problem_count = serializers.SerializerMethodField()
+    solved_count = serializers.SerializerMethodField()
+
+    class Meta:
+        model = ProblemSet
+        fields = [
+            "id", "title", "description",
+            "problem_count", "solved_count", "created_at", "updated_at",
+        ]
+        read_only_fields = ["id", "created_at", "updated_at"]
+
+    def get_problem_count(self, obj):
+        return self.context.get("problem_counts", {}).get(obj.id, 0)
+
+    def get_solved_count(self, obj):
+        return self.context.get("solved_counts", {}).get(obj.id, 0)
+
+
+class ProblemSetItemSerializer(serializers.ModelSerializer):
+    problem = ProblemListSerializer(read_only=True)
+    accepted = serializers.SerializerMethodField()
+    order = serializers.IntegerField(read_only=True)
+
+    class Meta:
+        model = ProblemSetItem
+        fields = ["id", "order", "problem", "accepted", "created_at"]
+
+    def get_accepted(self, obj):
+        return obj.problem_id in self.context.get("accepted_problem_ids", set())
+
+
+class ProblemSetDetailSerializer(ProblemSetSerializer):
+    items = ProblemSetItemSerializer(many=True, read_only=True)
+
+    class Meta(ProblemSetSerializer.Meta):
+        fields = ProblemSetSerializer.Meta.fields + ["items"]

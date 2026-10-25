@@ -20,6 +20,7 @@
         >
           <el-menu-item index="/problems">题库</el-menu-item>
           <el-menu-item index="/daily">每日一题</el-menu-item>
+          <el-menu-item index="/problem-sets">题单</el-menu-item>
           <el-menu-item index="/leaderboard">排行榜</el-menu-item>
           <el-menu-item index="/favorites">收藏夹</el-menu-item>
           <el-menu-item index="/submissions">我的提交</el-menu-item>
@@ -71,6 +72,7 @@
     <el-menu mode="vertical" router :default-active="activeMenu" class="drawer-menu">
       <el-menu-item index="/problems">题库</el-menu-item>
       <el-menu-item index="/daily">每日一题</el-menu-item>
+      <el-menu-item index="/problem-sets">题单</el-menu-item>
       <el-menu-item index="/leaderboard">排行榜</el-menu-item>
       <el-menu-item index="/favorites">收藏夹</el-menu-item>
       <el-menu-item index="/submissions">我的提交</el-menu-item>

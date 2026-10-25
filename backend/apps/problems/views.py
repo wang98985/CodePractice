@@ -1,8 +1,9 @@
 import json
+from collections import Counter
 from datetime import timedelta
 
 from django.core.cache import cache
-from django.db.models import Count, Q
+from django.db.models import Count, Max, Q
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
 from rest_framework import mixins, permissions, viewsets
@@ -23,7 +24,7 @@ from .cache_utils import (
     problem_list_cache_key,
 )
 from .filters import ProblemFilterSet
-from .models import DailyProblem, Favorite, Problem, Tag, TestCase
+from .models import DailyProblem, Favorite, Problem, ProblemSet, ProblemSetItem, Tag, TestCase
 from .pagination import ManagePagination
 from .serializers import (
     DailyProblemSerializer,
@@ -32,6 +33,9 @@ from .serializers import (
     ProblemListSerializer,
     ProblemManageListSerializer,
     ProblemManageSerializer,
+    ProblemSetDetailSerializer,
+    ProblemSetItemSerializer,
+    ProblemSetSerializer,
     TagSerializer,
     TestCaseManageSerializer,
 )
@@ -273,3 +277,131 @@ class DailyProblemView(APIView):
             recent.append(row)
 
         return Response({"today": today_data, "recent": recent})
+
+
+class ProblemSetViewSet(viewsets.ModelViewSet):
+    """我的题单：CRUD + 添加/移除题目
+
+    - GET/POST        /api/problem-sets/
+    - GET/PATCH/DELETE /api/problem-sets/{id}/
+    - POST            /api/problem-sets/{id}/items/        body {problem_id}
+    - DELETE          /api/problem-sets/{id}/items/{item_id}/
+    """
+
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get_queryset(self):
+        return (
+            ProblemSet.objects.filter(owner=self.request.user)
+            .prefetch_related("items__problem__tags")
+        )
+
+    def get_serializer_class(self):
+        if self.action in ("retrieve", "create", "update", "partial_update"):
+            return ProblemSetDetailSerializer
+        return ProblemSetSerializer
+
+    def perform_create(self, serializer):
+        serializer.save(owner=self.request.user)
+
+    def _stats_context(self, sets):
+        """一次性统计题单的题目数与当前用户已通过数，避免 N+1。"""
+        context = super().get_serializer_context()
+        set_ids = [obj.id for obj in sets]
+        pairs = list(
+            ProblemSetItem.objects.filter(problem_set_id__in=set_ids).values_list(
+                "problem_set_id", "problem_id"
+            )
+        )
+        problem_ids = {problem_id for _, problem_id in pairs}
+        accepted_ids = set(
+            Submission.objects.filter(
+                user=self.request.user,
+                status=Verdict.ACCEPTED,
+                problem_id__in=problem_ids,
+            ).values_list("problem_id", flat=True)
+        )
+        context["problem_counts"] = Counter(set_id for set_id, _ in pairs)
+        context["solved_counts"] = Counter(
+            set_id for set_id, problem_id in pairs if problem_id in accepted_ids
+        )
+        context["accepted_problem_ids"] = accepted_ids
+        return context
+
+    def list(self, request, *args, **kwargs):
+        sets = list(self.get_queryset())
+        serializer = self.get_serializer(
+            sets, many=True, context=self._stats_context(sets)
+        )
+        return Response(serializer.data)
+
+    def create(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        self.perform_create(serializer)
+        instance = serializer.instance
+        return Response(
+            self.get_serializer(
+                instance, context=self._stats_context([instance])
+            ).data,
+            status=201,
+        )
+
+    def retrieve(self, request, *args, **kwargs):
+        instance = self.get_object()
+        return Response(
+            self.get_serializer(instance, context=self._stats_context([instance])).data
+        )
+
+    def update(self, request, *args, **kwargs):
+        partial = kwargs.pop("partial", False)
+        instance = self.get_object()
+        serializer = self.get_serializer(instance, data=request.data, partial=partial)
+        serializer.is_valid(raise_exception=True)
+        self.perform_update(serializer)
+        return Response(
+            self.get_serializer(
+                serializer.instance, context=self._stats_context([serializer.instance])
+            ).data
+        )
+
+    @action(detail=True, methods=["post"], url_path="items")
+    def add_item(self, request, pk=None):
+        problem_set = self.get_object()
+        problem_id = request.data.get("problem_id")
+        if not problem_id:
+            return Response({"detail": "缺少 problem_id"}, status=400)
+        problem = Problem.objects.filter(pk=problem_id, is_public=True).first()
+        if problem is None:
+            return Response({"detail": "题目不存在"}, status=404)
+        if ProblemSetItem.objects.filter(problem_set=problem_set, problem=problem).exists():
+            return Response({"detail": "该题目已在题单中"}, status=400)
+        max_order = (
+            ProblemSetItem.objects.filter(problem_set=problem_set).aggregate(
+                Max("order")
+            )["order__max"]
+            or 0
+        )
+        item = ProblemSetItem.objects.create(
+            problem_set=problem_set, problem=problem, order=max_order + 1
+        )
+        problem_set.save(update_fields=["updated_at"])
+        accepted_ids = set(
+            Submission.objects.filter(
+                user=request.user, problem=problem, status=Verdict.ACCEPTED
+            ).values_list("problem_id", flat=True)
+        )
+        return Response(
+            ProblemSetItemSerializer(
+                item, context={"accepted_problem_ids": accepted_ids}
+            ).data,
+            status=201,
+        )
+
+    @action(detail=True, methods=["delete"], url_path=r"items/(?P<item_id>[^/.]+)")
+    def remove_item(self, request, pk=None, item_id=None):
+        problem_set = self.get_object()
+        item = get_object_or_404(ProblemSetItem, pk=item_id, problem_set=problem_set)
+        item.delete()
+        problem_set.save(update_fields=["updated_at"])
+        return Response(status=204)
